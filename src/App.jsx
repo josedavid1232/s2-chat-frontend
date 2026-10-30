@@ -12,7 +12,7 @@ export default function App() {
 
   useEffect(() => {
     // URL activa de Cloudflare para el backend (puerto 8080)
-    const backendUrl = 'https://explain-man-recommended-purchased.trycloudflare.com/ws-chat';
+    const backendUrl = `${import.meta.env.VITE_API_URL || 'https://s2-chat-backend.onrender.com'}/ws-chat`;
 
     const socket = new SockJS(backendUrl);
     const stompClient = new Client({
