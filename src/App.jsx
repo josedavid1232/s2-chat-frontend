@@ -21,11 +21,15 @@ export default function App() {
     const socket = new SockJS(backendUrl);
     const stompClient = new Client({
       webSocketFactory: () => socket,
+      reconnectDelay: 5000,
       onConnect: () => {
         console.log('Conectado al chat de RuneScape');
+        // Suscripción al tópico donde el backend retransmite los mensajes
         stompClient.subscribe('/topic/messages', (sdkEvent) => {
-          const receivedMessage = JSON.parse(sdkEvent.body);
-          setMessages((prevMessages) => [...prevMessages, receivedMessage]);
+          if (sdkEvent.body) {
+            const receivedMessage = JSON.parse(sdkEvent.body);
+            setMessages((prevMessages) => [...prevMessages, receivedMessage]);
+          }
         });
       },
       onStompError: (frame) => {
@@ -50,10 +54,11 @@ export default function App() {
   const sendMessage = (e) => {
     e.preventDefault();
     if (inputMessage.trim() && stompClientRef.current && stompClientRef.current.connected) {
+      // Objeto de mensaje estándar para Spring Boot
       const chatMessage = {
         sender: username,
         content: inputMessage.trim(),
-        timestamp: new Date().toLocaleTimeString()
+        type: 'CHAT'
       };
 
       stompClientRef.current.publish({
@@ -62,6 +67,8 @@ export default function App() {
       });
 
       setInputMessage('');
+    } else if (!stompClientRef.current?.connected) {
+      console.warn('El WebSocket no está conectado aún.');
     }
   };
 
@@ -107,8 +114,8 @@ export default function App() {
       <div style={{ height: '300px', overflowY: 'auto', border: '1px solid #444', padding: '10px', background: '#111', textAlign: 'left' }}>
         {messages.map((msg, index) => (
           <div key={index} style={{ marginBottom: '5px' }}>
-            <span style={{ color: '#ff9900', fontWeight: 'bold' }}>{msg.sender}: </span>
-            <span style={{ color: '#fff' }}>{msg.content}</span>
+            <span style={{ color: '#ff9900', fontWeight: 'bold' }}>{msg.sender || msg.username || 'Anónimo'}: </span>
+            <span style={{ color: '#fff' }}>{msg.content || msg.message}</span>
           </div>
         ))}
         <div ref={chatBottomRef} />
