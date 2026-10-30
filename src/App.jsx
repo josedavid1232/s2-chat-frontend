@@ -1,17 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
-import './App.css';
+import SockJS from 'sockjs-client';
 
 export default function App() {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [username] = useState(() => 'Heroe_' + Math.floor(Math.random() * 1000));
+  
+  // Nombre de usuario personalizable
+  const [username, setUsername] = useState(() => 'Heroe_' + Math.floor(Math.random() * 1000));
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState(username);
+
   const stompClientRef = useRef(null);
   const chatBottomRef = useRef(null);
 
   useEffect(() => {
-    // URL activa de Cloudflare para el backend (puerto 8080)
+    // URL dinámica que apunta al backend en Render
     const backendUrl = `${import.meta.env.VITE_API_URL || 'https://s2-chat-backend.onrender.com'}/ws-chat`;
 
     const socket = new SockJS(backendUrl);
@@ -25,7 +29,7 @@ export default function App() {
         });
       },
       onStompError: (frame) => {
-        console.error('Error en STOMP:', frame);
+        console.error('Error STOMP:', frame.headers['message']);
       }
     });
 
@@ -43,19 +47,13 @@ export default function App() {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = (e) => {
+  const sendMessage = (e) => {
     e.preventDefault();
-
-    if (!stompClientRef.current || !stompClientRef.current.connected) {
-      console.warn('El WebSocket aún no está conectado al backend.');
-      return;
-    }
-
-    if (inputMessage.trim() !== '') {
+    if (inputMessage.trim() && stompClientRef.current && stompClientRef.current.connected) {
       const chatMessage = {
         sender: username,
-        content: inputMessage,
-        type: 'CHAT'
+        content: inputMessage.trim(),
+        timestamp: new Date().toLocaleTimeString()
       };
 
       stompClientRef.current.publish({
@@ -67,32 +65,66 @@ export default function App() {
     }
   };
 
+  const handleSaveName = () => {
+    if (tempName.trim()) {
+      setUsername(tempName.trim());
+      setIsEditingName(false);
+    }
+  };
+
   return (
-      <div className="chat-container">
-        <div className="chat-header">
-          RuneScape Classic Chat - Canal Principal
-        </div>
+    <div className="chat-container" style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', fontFamily: 'monospace' }}>
+      <h2>RuneScape Classic Chat - Canal Principal</h2>
 
-        <div className="chat-box">
-          {messages.map((msg, index) => (
-              <div key={index} className="chat-message">
-                <span className="username">{msg.sender}: </span>
-                <span className="text">{msg.content}</span>
-              </div>
-          ))}
-          <div ref={chatBottomRef} />
-        </div>
-
-        <form onSubmit={handleSendMessage} className="input-container">
-          <input
+      {/* Control de Nombre de Usuario */}
+      <div style={{ marginBottom: '15px', background: '#222', padding: '10px', borderRadius: '5px' }}>
+        <span style={{ color: '#aaa' }}>Tu Nombre: </span>
+        {isEditingName ? (
+          <>
+            <input
               type="text"
-              placeholder="Escribe un mensaje..."
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              autoFocus
-          />
-          <button type="submit">Enviar</button>
-        </form>
+              value={tempName}
+              onChange={(e) => setTempName(e.target.value)}
+              maxLength={15}
+              style={{ padding: '3px 6px', marginRight: '5px' }}
+            />
+            <button onClick={handleSaveName} style={{ cursor: 'pointer' }}>Guardar</button>
+          </>
+        ) : (
+          <>
+            <strong style={{ color: '#00ff00', fontSize: '1.1em' }}>{username}</strong>
+            <button 
+              onClick={() => { setTempName(username); setIsEditingName(true); }} 
+              style={{ marginLeft: '10px', cursor: 'pointer', fontSize: '0.8em' }}
+            >
+              Cambiar
+            </button>
+          </>
+        )}
       </div>
+
+      {/* Caja de Mensajes */}
+      <div style={{ height: '300px', overflowY: 'auto', border: '1px solid #444', padding: '10px', background: '#111', textAlign: 'left' }}>
+        {messages.map((msg, index) => (
+          <div key={index} style={{ marginBottom: '5px' }}>
+            <span style={{ color: '#ff9900', fontWeight: 'bold' }}>{msg.sender}: </span>
+            <span style={{ color: '#fff' }}>{msg.content}</span>
+          </div>
+        ))}
+        <div ref={chatBottomRef} />
+      </div>
+
+      {/* Formulario de Envío */}
+      <form onSubmit={sendMessage} style={{ marginTop: '10px', display: 'flex', gap: '5px' }}>
+        <input
+          type="text"
+          value={inputMessage}
+          onChange={(e) => setInputMessage(e.target.value)}
+          placeholder="Escribe un mensaje..."
+          style={{ flex: 1, padding: '8px' }}
+        />
+        <button type="submit" style={{ padding: '8px 15px', cursor: 'pointer' }}>Enviar</button>
+      </form>
+    </div>
   );
 }
