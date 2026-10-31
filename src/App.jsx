@@ -19,6 +19,7 @@ function Chat() {
         setIsConnected(true);
 
         stompClient.subscribe('/topic/public', (message) => {
+          console.log('Mensaje recibido del servidor:', message.body);
           const newMessage = JSON.parse(message.body);
           setMessages((prev) => [...prev, newMessage]);
         });
@@ -44,13 +45,12 @@ function Chat() {
   }, []);
 
   const handleSendMessage = (e) => {
-    // 🛡️ Evitamos que la página se recargue o se comporte raro al presionar Enter
     if (e) e.preventDefault();
 
     if (!messageInput.trim()) return;
 
     if (!stompClientRef.current || !stompClientRef.current.connected) {
-      alert("El WebSocket no está conectado en este momento.");
+      alert("El WebSocket no está conectado.");
       return;
     }
 
@@ -60,13 +60,14 @@ function Chat() {
       type: 'CHAT'
     };
 
-    // Publicamos el mensaje al destino configurado en el backend
+    console.log('Intentando enviar mensaje:', chatMessage);
+
+    // Publicamos al backend
     stompClientRef.current.publish({
       destination: '/app/chat.sendMessage',
       body: JSON.stringify(chatMessage),
     });
 
-    // Limpiamos el input después de enviar correctamente
     setMessageInput('');
   };
 
@@ -78,7 +79,6 @@ function Chat() {
         Estado: {isConnected ? <span style={{ color: 'green', fontWeight: 'bold' }}>● Conectado</span> : <span style={{ color: 'red', fontWeight: 'bold' }}>● Conectando...</span>}
       </div>
 
-      {/* Cuadro donde se muestran los mensajes del chat */}
       <div style={{ background: '#111', color: '#fff', height: '300px', overflowY: 'scroll', padding: '10px', marginBottom: '10px', borderRadius: '4px' }}>
         {messages.map((msg, index) => (
           <div key={index} style={{ marginBottom: '6px' }}>
@@ -87,7 +87,6 @@ function Chat() {
         ))}
       </div>
 
-      {/* Formulario que atrapa tanto el botón como la tecla Enter */}
       <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '10px' }}>
         <input 
           type="text" 
