@@ -9,7 +9,6 @@ function Chat() {
   const stompClientRef = useRef(null);
 
   useEffect(() => {
-    // Usamos SockJS con https:// para que Render acepte el handshake inicial correctamente
     const socket = new SockJS('https://s2-chat-backend.onrender.com/ws');
     
     const stompClient = new Client({
@@ -47,8 +46,9 @@ function Chat() {
   const sendMessage = (e) => {
     e.preventDefault();
     
-    if (!isConnected || !stompClientRef.current) {
-      alert("El WebSocket no está conectado aún.");
+    // 🛡️ Validación robusta: Verificamos tanto el estado como que el cliente esté activo y conectado
+    if (!isConnected || !stompClientRef.current || !stompClientRef.current.connected) {
+      alert("El WebSocket se está estabilizando. Espera un segundito e intenta de nuevo.");
       return;
     }
 
