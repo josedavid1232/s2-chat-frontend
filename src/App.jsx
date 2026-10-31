@@ -2,39 +2,32 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
-export default function App() {
+function Chat() {
   const [messages, setMessages] = useState([]);
-  const [inputMessage, setInputMessage] = useState('');
-  
-  // Nombre de usuario personalizable
-  const [username, setUsername] = useState(() => 'Heroe_' + Math.floor(Math.random() * 1000));
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [tempName, setTempName] = useState(username);
-
+  const [messageInput, setMessageInput] = useState('');
+  const [isConnected, setIsConnected] = useState(false); // 👈 Estado clave para saber si está conectado
   const stompClientRef = useRef(null);
-  const chatBottomRef = useRef(null);
 
   useEffect(() => {
-    // URL dinámica que apunta al backend en Render
-    const backendUrl = `${import.meta.env.VITE_API_URL || 'https://s2-chat-backend.onrender.com'}/ws-chat`;
-
-    const socket = new SockJS(backendUrl);
+    // Conexión a tu backend (apunta a tu URL de Render o localhost según corresponda)
+    const socket = new SockJS('https://s2-chat-backend.onrender.com/ws'); // Cambia por tu endpoint si es distinto
     const stompClient = new Client({
       webSocketFactory: () => socket,
-      reconnectDelay: 5000,
+      reconnectDelay: 5000, // Reconecta automáticamente si se cae la red con Render
       onConnect: () => {
-        console.log('Conectado al chat de RuneScape');
-        // Suscripción al tópico donde el backend retransmite los mensajes
-        stompClient.subscribe('/topic/messages', (sdkEvent) => {
-          if (sdkEvent.body) {
-            const receivedMessage = JSON.parse(sdkEvent.body);
-            setMessages((prevMessages) => [...prevMessages, receivedMessage]);
-          }
+        console.log('Conectado al WebSocket!');
+        setIsConnected(true); // 👈 Activamos el estado de conexión
+
+        // Suscripción al canal público del chat
+        stompClient.subscribe('/topic/public', (message) => {
+          const newMessage = JSON.parse(message.body);
+          setMessages((prev) => [...prev, newMessage]);
         });
       },
-      onStompError: (frame) => {
-        console.error('Error STOMP:', frame.headers['message']);
-      }
+      onDisconnect: () => {
+        console.log('Desconectado del WebSocket');
+        setIsConnected(false); // 👈 Desactivamos si se pierde la conexión
+      },
     });
 
     stompClient.activate();
@@ -47,91 +40,65 @@ export default function App() {
     };
   }, []);
 
-  useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
   const sendMessage = (e) => {
     e.preventDefault();
-    if (inputMessage.trim() && stompClientRef.current && stompClientRef.current.connected) {
-      // Objeto de mensaje estándar para Spring Boot
-      const chatMessage = {
-        sender: username,
-        content: inputMessage.trim(),
-        type: 'CHAT'
-      };
-
-      stompClientRef.current.publish({
-        destination: '/app/chat.sendMessage',
-        body: JSON.stringify(chatMessage)
-      });
-
-      setInputMessage('');
-    } else if (!stompClientRef.current?.connected) {
-      console.warn('El WebSocket no está conectado aún.');
+    
+    // 🛡️ PROTECCIÓN CRÍTICA: Si no está conectado, evitamos que intente enviar y bloqueamos el error
+    if (!isConnected || !stompClientRef.current) {
+      alert("El WebSocket no está conectado aún. Espera un momento o recarga si persiste.");
+      return;
     }
-  };
 
-  const handleSaveName = () => {
-    if (tempName.trim()) {
-      setUsername(tempName.trim());
-      setIsEditingName(false);
-    }
+    if (messageInput.trim() === '') return;
+
+    const chatMessage = {
+      sender: 'Heroe_4', // O tu estado de usuario actual
+      content: messageInput,
+      type: 'CHAT'
+    };
+
+    stompClientRef.current.publish({
+      destination: '/app/chat.sendMessage',
+      body: JSON.stringify(chatMessage),
+    });
+
+    setMessageInput('');
   };
 
   return (
-    <div className="chat-container" style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', fontFamily: 'monospace' }}>
+    <div style={{ padding: '20px' }}>
       <h2>RuneScape Classic Chat - Canal Principal</h2>
-
-      {/* Control de Nombre de Usuario */}
-      <div style={{ marginBottom: '15px', background: '#222', padding: '10px', borderRadius: '5px' }}>
-        <span style={{ color: '#aaa' }}>Tu Nombre: </span>
-        {isEditingName ? (
-          <>
-            <input
-              type="text"
-              value={tempName}
-              onChange={(e) => setTempName(e.target.value)}
-              maxLength={15}
-              style={{ padding: '3px 6px', marginRight: '5px' }}
-            />
-            <button onClick={handleSaveName} style={{ cursor: 'pointer' }}>Guardar</button>
-          </>
-        ) : (
-          <>
-            <strong style={{ color: '#00ff00', fontSize: '1.1em' }}>{username}</strong>
-            <button 
-              onClick={() => { setTempName(username); setIsEditingName(true); }} 
-              style={{ marginLeft: '10px', cursor: 'pointer', fontSize: '0.8em' }}
-            >
-              Cambiar
-            </button>
-          </>
-        )}
+      
+      {/* 🟢 Indicador visual de estado para que sepas si está listo para enviar */}
+      <div style={{ marginBottom: '10px', fontSize: '14px' }}>
+        Estado: {isConnected ? <span style={{ color: 'green' }}>● Conectado</span> : <span style={{ color: 'red' }}>● Conectando...</span>}
       </div>
 
-      {/* Caja de Mensajes */}
-      <div style={{ height: '300px', overflowY: 'auto', border: '1px solid #444', padding: '10px', background: '#111', textAlign: 'left' }}>
+      <div style={{ background: '#111', color: '#fff', height: '300px', overflowY: 'scroll', padding: '10px', marginBottom: '10px' }}>
         {messages.map((msg, index) => (
-          <div key={index} style={{ marginBottom: '5px' }}>
-            <span style={{ color: '#ff9900', fontWeight: 'bold' }}>{msg.sender || msg.username || 'Anónimo'}: </span>
-            <span style={{ color: '#fff' }}>{msg.content || msg.message}</span>
-          </div>
+          <div key={index}><b>{msg.sender}:</b> {msg.content}</div>
         ))}
-        <div ref={chatBottomRef} />
       </div>
 
-      {/* Formulario de Envío */}
-      <form onSubmit={sendMessage} style={{ marginTop: '10px', display: 'flex', gap: '5px' }}>
-        <input
-          type="text"
-          value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
+      <form onSubmit={sendMessage} style={{ display: 'flex', gap: '10px' }}>
+        <input 
+          type="text" 
+          value={messageInput}
+          onChange={(e) => setMessageInput(e.target.value)}
           placeholder="Escribe un mensaje..."
           style={{ flex: 1, padding: '8px' }}
         />
-        <button type="submit" style={{ padding: '8px 15px', cursor: 'pointer' }}>Enviar</button>
+        {/* 🚫 El botón se desgrana/deshabilita automáticamente si no hay conexión, evitando el error */}
+        <button 
+          type="submit" 
+          disabled={!isConnected}
+          style={{ padding: '8px 16px', opacity: isConnected ? 1 : 0.5, cursor: isConnected ? 'pointer' : 'not-allowed' }}
+        >
+          Enviar
+        </button>
       </form>
     </div>
   );
 }
+
+export default Chat;
