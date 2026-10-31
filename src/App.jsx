@@ -2,42 +2,43 @@ import React, { useEffect, useState } from 'react';
 import SockJS from 'sockjs-client';
 import { Stomp } from '@stomp/stompjs';
 
-export default function ChatComponent() {
+export default function App() {
     const [messages, setMessages] = useState([]);
     const [messageInput, setMessageInput] = useState('');
     const [stompClient, setStompClient] = useState(null);
-    const [username, setUsername] = useState('Heroe_4'); // O el nombre que uses en tu app
+    const [username, setUsername] = useState('Heroe_4');
 
     useEffect(() => {
-        // 1. Conexión con SockJS al backend en Render
-        const socket = new SockJS('https://s2-chat-backend.onrender.com/ws');
-        const client = Stomp.over(socket);
+        // Inicialización optimizada con fábrica de sockets para evitar advertencias
+        const client = Stomp.client('https://s2-chat-backend.onrender.com/ws');
+        client.webSocketFactory = () => new SockJS('https://s2-chat-backend.onrender.com/ws');
 
-        client.connect({}, (frame) => {
+        client.onConnect = (frame) => {
             console.log('¡Conectado al WebSocket con SockJS!');
 
-            // 2. Suscripción al canal de difusión del backend
+            // Suscripción al canal de difusión del backend
             client.subscribe('/topic/public', (payload) => {
                 const receivedMessage = JSON.parse(payload.body);
-                // Agrega el mensaje recibido al estado para que se pinte en pantalla
                 setMessages((prevMessages) => [...prevMessages, receivedMessage]);
             });
+        };
 
-        }, (error) => {
-            console.error('Error de conexión WebSocket:', error);
-        });
+        client.onStompError = (error) => {
+            console.error('Error en protocolo STOMP:', error);
+        };
 
+        client.activate();
         setStompClient(client);
 
-        // Cleanup al desmontar el componente
+        // Cleanup al desmontar
         return () => {
-            if (client && client.connected) {
-                client.disconnect();
+            if (client) {
+                client.deactivate();
             }
         };
     }, []);
 
-    // 3. Función para enviar el mensaje al backend
+    // Función para enviar el mensaje al backend
     const sendMessage = (e) => {
         e.preventDefault();
         if (messageInput.trim() && stompClient && stompClient.connected) {
@@ -49,10 +50,11 @@ export default function ChatComponent() {
 
             console.log('Intentando enviar mensaje:', chatMessage);
             
-            // Envía el mensaje al @MessageMapping("/chat.sendMessage") del backend
-            stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(chatMessage));
+            stompClient.publish({
+                destination: '/app/chat.sendMessage',
+                body: JSON.stringify(chatMessage)
+            });
             
-            // Limpia el input de texto
             setMessageInput('');
         }
     };
