@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 
 function Chat() {
   const [messages, setMessages] = useState([]);
@@ -8,14 +9,14 @@ function Chat() {
   const stompClientRef = useRef(null);
 
   useEffect(() => {
-    // Usamos el protocolo wss:// directamente para evitar demoras con transportes alternativos
+    // Usamos SockJS con https:// para que Render acepte el handshake inicial correctamente
+    const socket = new SockJS('https://s2-chat-backend.onrender.com/ws');
+    
     const stompClient = new Client({
-      brokerURL: 'wss://s2-chat-backend.onrender.com/ws',
+      webSocketFactory: () => socket,
       reconnectDelay: 3000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
       onConnect: () => {
-        console.log('¡Conectado al WebSocket con éxito!');
+        console.log('¡Conectado al WebSocket con SockJS!');
         setIsConnected(true);
 
         stompClient.subscribe('/topic/public', (message) => {
@@ -47,7 +48,7 @@ function Chat() {
     e.preventDefault();
     
     if (!isConnected || !stompClientRef.current) {
-      alert("El WebSocket no está conectado. Espera un segundo a que establezca enlace.");
+      alert("El WebSocket no está conectado aún.");
       return;
     }
 
