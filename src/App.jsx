@@ -1,24 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
 
 function Chat() {
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
-  const [isConnected, setIsConnected] = useState(false); // 👈 Estado clave para saber si está conectado
+  const [isConnected, setIsConnected] = useState(false);
   const stompClientRef = useRef(null);
 
   useEffect(() => {
-    // Conexión a tu backend (apunta a tu URL de Render o localhost según corresponda)
-    const socket = new SockJS('https://s2-chat-backend.onrender.com/ws'); // Cambia por tu endpoint si es distinto
+    // Usamos el protocolo wss:// directamente para evitar demoras con transportes alternativos
     const stompClient = new Client({
-      webSocketFactory: () => socket,
-      reconnectDelay: 5000, // Reconecta automáticamente si se cae la red con Render
+      brokerURL: 'wss://s2-chat-backend.onrender.com/ws',
+      reconnectDelay: 3000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
       onConnect: () => {
-        console.log('Conectado al WebSocket!');
-        setIsConnected(true); // 👈 Activamos el estado de conexión
+        console.log('¡Conectado al WebSocket con éxito!');
+        setIsConnected(true);
 
-        // Suscripción al canal público del chat
         stompClient.subscribe('/topic/public', (message) => {
           const newMessage = JSON.parse(message.body);
           setMessages((prev) => [...prev, newMessage]);
@@ -26,8 +25,12 @@ function Chat() {
       },
       onDisconnect: () => {
         console.log('Desconectado del WebSocket');
-        setIsConnected(false); // 👈 Desactivamos si se pierde la conexión
+        setIsConnected(false);
       },
+      onStompError: (frame) => {
+        console.error('Error en STOMP: ' + frame.headers['message']);
+        setIsConnected(false);
+      }
     });
 
     stompClient.activate();
@@ -43,16 +46,15 @@ function Chat() {
   const sendMessage = (e) => {
     e.preventDefault();
     
-    // 🛡️ PROTECCIÓN CRÍTICA: Si no está conectado, evitamos que intente enviar y bloqueamos el error
     if (!isConnected || !stompClientRef.current) {
-      alert("El WebSocket no está conectado aún. Espera un momento o recarga si persiste.");
+      alert("El WebSocket no está conectado. Espera un segundo a que establezca enlace.");
       return;
     }
 
     if (messageInput.trim() === '') return;
 
     const chatMessage = {
-      sender: 'Heroe_4', // O tu estado de usuario actual
+      sender: 'Heroe_4',
       content: messageInput,
       type: 'CHAT'
     };
@@ -69,9 +71,8 @@ function Chat() {
     <div style={{ padding: '20px' }}>
       <h2>RuneScape Classic Chat - Canal Principal</h2>
       
-      {/* 🟢 Indicador visual de estado para que sepas si está listo para enviar */}
       <div style={{ marginBottom: '10px', fontSize: '14px' }}>
-        Estado: {isConnected ? <span style={{ color: 'green' }}>● Conectado</span> : <span style={{ color: 'red' }}>● Conectando...</span>}
+        Estado: {isConnected ? <span style={{ color: 'green', fontWeight: 'bold' }}>● Conectado</span> : <span style={{ color: 'red', fontWeight: 'bold' }}>● Conectando...</span>}
       </div>
 
       <div style={{ background: '#111', color: '#fff', height: '300px', overflowY: 'scroll', padding: '10px', marginBottom: '10px' }}>
@@ -88,7 +89,6 @@ function Chat() {
           placeholder="Escribe un mensaje..."
           style={{ flex: 1, padding: '8px' }}
         />
-        {/* 🚫 El botón se desgrana/deshabilita automáticamente si no hay conexión, evitando el error */}
         <button 
           type="submit" 
           disabled={!isConnected}
