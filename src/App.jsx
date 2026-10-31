@@ -1,109 +1,98 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Client } from '@stomp/stompjs';
+import React, { useEffect, useState } from 'react';
 import SockJS from 'sockjs-client';
+import { Stomp } from '@stomp/stompjs';
 
-function Chat() {
-  const [messages, setMessages] = useState([]);
-  const [messageInput, setMessageInput] = useState('');
-  const [isConnected, setIsConnected] = useState(false);
-  const stompClientRef = useRef(null);
+export default function ChatComponent() {
+    const [messages, setMessages] = useState([]);
+    const [messageInput, setMessageInput] = useState('');
+    const [stompClient, setStompClient] = useState(null);
+    const [username, setUsername] = useState('Heroe_4'); // O el nombre que uses en tu app
 
-  useEffect(() => {
-    const socket = new SockJS('https://s2-chat-backend.onrender.com/ws');
-    
-    const stompClient = new Client({
-      webSocketFactory: () => socket,
-      reconnectDelay: 3000,
-      onConnect: () => {
-        console.log('¡Conectado al WebSocket con SockJS!');
-        setIsConnected(true);
+    useEffect(() => {
+        // 1. Conexión con SockJS al backend en Render
+        const socket = new SockJS('https://s2-chat-backend.onrender.com/ws');
+        const client = Stomp.over(socket);
 
-        stompClient.subscribe('/topic/public', (message) => {
-          console.log('Mensaje recibido del servidor:', message.body);
-          const newMessage = JSON.parse(message.body);
-          setMessages((prev) => [...prev, newMessage]);
+        client.connect({}, (frame) => {
+            console.log('¡Conectado al WebSocket con SockJS!');
+
+            // 2. Suscripción al canal de difusión del backend
+            client.subscribe('/topic/public', (payload) => {
+                const receivedMessage = JSON.parse(payload.body);
+                // Agrega el mensaje recibido al estado para que se pinte en pantalla
+                setMessages((prevMessages) => [...prevMessages, receivedMessage]);
+            });
+
+        }, (error) => {
+            console.error('Error de conexión WebSocket:', error);
         });
-      },
-      onDisconnect: () => {
-        console.log('Desconectado del WebSocket');
-        setIsConnected(false);
-      },
-      onStompError: (frame) => {
-        console.error('Error en STOMP: ' + frame.headers['message']);
-        setIsConnected(false);
-      }
-    });
 
-    stompClient.activate();
-    stompClientRef.current = stompClient;
+        setStompClient(client);
 
-    return () => {
-      if (stompClientRef.current) {
-        stompClientRef.current.deactivate();
-      }
-    };
-  }, []);
+        // Cleanup al desmontar el componente
+        return () => {
+            if (client && client.connected) {
+                client.disconnect();
+            }
+        };
+    }, []);
 
-  const handleSendMessage = (e) => {
-    if (e) e.preventDefault();
+    // 3. Función para enviar el mensaje al backend
+    const sendMessage = (e) => {
+        e.preventDefault();
+        if (messageInput.trim() && stompClient && stompClient.connected) {
+            const chatMessage = {
+                sender: username,
+                content: messageInput,
+                type: 'CHAT'
+            };
 
-    if (!messageInput.trim()) return;
-
-    if (!stompClientRef.current || !stompClientRef.current.connected) {
-      alert("El WebSocket no está conectado.");
-      return;
-    }
-
-    const chatMessage = {
-      sender: 'Heroe_4',
-      content: messageInput.trim(),
-      type: 'CHAT'
+            console.log('Intentando enviar mensaje:', chatMessage);
+            
+            // Envía el mensaje al @MessageMapping("/chat.sendMessage") del backend
+            stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(chatMessage));
+            
+            // Limpia el input de texto
+            setMessageInput('');
+        }
     };
 
-    console.log('Intentando enviar mensaje:', chatMessage);
+    return (
+        <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+            <h2>RuneScape Classic Chat - Canal Principal</h2>
+            
+            {/* Caja donde se muestran los mensajes */}
+            <div style={{ 
+                border: '1px solid #ccc', 
+                height: '300px', 
+                overflowY: 'scroll', 
+                padding: '10px', 
+                marginBottom: '10px',
+                backgroundColor: '#111',
+                color: '#fff',
+                textAlign: 'left'
+            }}>
+                {messages.map((msg, index) => (
+                    <div key={index} style={{ marginBottom: '8px' }}>
+                        <strong>{msg.sender}: </strong>
+                        <span>{msg.content}</span>
+                    </div>
+                ))}
+            </div>
 
-    // Publicamos al backend
-    stompClientRef.current.publish({
-      destination: '/app/chat.sendMessage',
-      body: JSON.stringify(chatMessage),
-    });
-
-    setMessageInput('');
-  };
-
-  return (
-    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
-      <h2>RuneScape Classic Chat - Canal Principal</h2>
-      
-      <div style={{ marginBottom: '10px', fontSize: '14px' }}>
-        Estado: {isConnected ? <span style={{ color: 'green', fontWeight: 'bold' }}>● Conectado</span> : <span style={{ color: 'red', fontWeight: 'bold' }}>● Conectando...</span>}
-      </div>
-
-      <div style={{ background: '#111', color: '#fff', height: '300px', overflowY: 'scroll', padding: '10px', marginBottom: '10px', borderRadius: '4px' }}>
-        {messages.map((msg, index) => (
-          <div key={index} style={{ marginBottom: '6px' }}>
-            <b style={{ color: '#ffcc00' }}>{msg.sender}:</b> {msg.content}
-          </div>
-        ))}
-      </div>
-
-      <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '10px' }}>
-        <input 
-          type="text" 
-          value={messageInput}
-          onChange={(e) => setMessageInput(e.target.value)}
-          placeholder="Escribe un mensaje y presiona Enter..."
-          style={{ flex: 1, padding: '10px', borderRadius: '4px', border: '1px solid #ccc' }}
-        />
-        <button 
-          type="submit" 
-          style={{ padding: '10px 20px', cursor: 'pointer', background: '#0070f3', color: '#fff', border: 'none', borderRadius: '4px' }}
-        >
-          Enviar
-        </button>
-      </form>
-    </div>
-  );
+            {/* Formulario para escribir y enviar */}
+            <form onSubmit={sendMessage} style={{ display: 'flex', gap: '10px' }}>
+                <input 
+                    type="text" 
+                    value={messageInput} 
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    placeholder="Escribe un mensaje y presiona Enviar..." 
+                    style={{ flex: 1, padding: '8px' }}
+                />
+                <button type="submit" style={{ padding: '8px 16px', backgroundColor: '#007bff', color: '#fff', border: 'none' }}>
+                    Enviar
+                </button>
+            </form>
+        </div>
+    );
 }
-
-export default Chat;
