@@ -46,13 +46,13 @@ function Chat() {
   const sendMessage = (e) => {
     e.preventDefault();
     
-    // 🛡️ Validación robusta: Verificamos tanto el estado como que el cliente esté activo y conectado
-    if (!isConnected || !stompClientRef.current || !stompClientRef.current.connected) {
-      alert("El WebSocket se está estabilizando. Espera un segundito e intenta de nuevo.");
+    if (!messageInput.trim()) return;
+
+    // Verificamos si el cliente está listo
+    if (!stompClientRef.current || !stompClientRef.current.connected) {
+      alert("El WebSocket no está listo todavía.");
       return;
     }
-
-    if (messageInput.trim() === '') return;
 
     const chatMessage = {
       sender: 'Heroe_4',
@@ -65,6 +65,7 @@ function Chat() {
       body: JSON.stringify(chatMessage),
     });
 
+    // Limpiamos el input después de enviar con éxito
     setMessageInput('');
   };
 
@@ -92,8 +93,7 @@ function Chat() {
         />
         <button 
           type="submit" 
-          disabled={!isConnected}
-          style={{ padding: '8px 16px', opacity: isConnected ? 1 : 0.5, cursor: isConnected ? 'pointer' : 'not-allowed' }}
+          style={{ padding: '8px 16px', cursor: 'pointer' }}
         >
           Enviar
         </button>
