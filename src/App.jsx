@@ -9,6 +9,7 @@ function App() {
   const [username, setUsername] = useState('Heroe_' + Math.floor(Math.random() * 1000));
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [tempUsername, setTempUsername] = useState(username);
+  const [userCount, setUserCount] = useState(0); // Estado para el contador de personas conectadas
   
   const stompClientRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -22,9 +23,17 @@ function App() {
       reconnectDelay: 5000,
       onConnect: () => {
         console.log('Conectado al WebSocket');
+        
+        // Suscripción al chat global
         client.subscribe('/topic/public', (message) => {
           const receivedMessage = JSON.parse(message.body);
           setMessages((prevMessages) => [...prevMessages, receivedMessage]);
+        });
+
+        // Suscripción al contador de usuarios en línea
+        client.subscribe('/topic/users', (message) => {
+          const count = JSON.parse(message.body);
+          setUserCount(count);
         });
       },
       onStompError: (frame) => {
@@ -76,8 +85,23 @@ function App() {
 
   return (
     <div className="chat-container" style={{ padding: '20px', maxWidth: '600px', margin: '20px auto', color: 'white' }}>
-      {/* Título limpio como Chat Global */}
-      <h2>Chat Global</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+        <h2>Chat Global</h2>
+        
+        {/* Indicador con el número de personas conectadas */}
+        <div style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px', background: '#161b22', padding: '6px 12px', borderRadius: '20px', border: '1px solid #30363d' }}>
+          <span style={{
+            height: '10px',
+            width: '10px',
+            backgroundColor: '#238636',
+            borderRadius: '50%',
+            display: 'inline-block'
+          }}></span>
+          <span style={{ color: '#3fb950', fontWeight: 'bold' }}>
+            {userCount} {userCount === 1 ? 'conectado' : 'conectados'}
+          </span>
+        </div>
+      </div>
       
       {/* Sección para cambiar el apodo */}
       <div style={{ marginBottom: '15px', background: '#161b22', padding: '12px', borderRadius: '6px', border: '1px solid #30363d' }}>
@@ -116,7 +140,6 @@ function App() {
       <div className="chat-box" style={{ height: '350px', border: '1px solid #30363d', overflowY: 'scroll', padding: '12px', background: '#010409', marginBottom: '10px' }}>
         {messages.map((msg, index) => (
           <div key={index} style={{ marginBottom: '8px', wordBreak: 'break-word' }}>
-            {/* Nombres en rojo */}
             <span style={{ color: '#ff5555', fontWeight: 'bold' }}>
               {msg.sender}:
             </span>{' '}
