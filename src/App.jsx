@@ -13,10 +13,18 @@ function App() {
   const stompClientRef = useRef(null);
   const messagesEndRef = useRef(null);
 
+  // Función para asignar un color único y constante basado en las letras del nombre de usuario
+  const getUserColorClass = (name) => {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % 8; // Tenemos 8 colores definidos en el CSS
+    return `user-color-${index}`;
+  };
+
   useEffect(() => {
-    // Obtiene la URL del backend desde las variables de entorno de Vercel o usa localhost para pruebas
     const backendUrl = import.meta.env.VITE_API_URL || 'https://s2-chat-backend.onrender.com';
-    
     const socketFactory = () => new SockJS(`${backendUrl}/ws`);
     
     const client = new Client({
@@ -50,7 +58,7 @@ function App() {
 
   const sendMessage = (e) => {
     e.preventDefault();
-    if (!messageInput.trim()) return; // Validación de campos vacíos (HU-C06)
+    if (!messageInput.trim()) return;
 
     if (stompClientRef.current && stompClientRef.current.connected) {
       const chatMessage = {
@@ -77,17 +85,17 @@ function App() {
   };
 
   return (
-    <div className="chat-container" style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', color: 'white' }}>
+    <div className="chat-container" style={{ padding: '20px', maxWidth: '600px', margin: '20px auto', color: 'white' }}>
       <h2>RuneScape Classic Chat - Canal Principal</h2>
       
-      {/* Sección para cambiar el apodo (HU-C04) */}
-      <div style={{ marginBottom: '15px', background: '#222', padding: '10px', borderRadius: '5px' }}>
+      {/* Sección para cambiar el apodo */}
+      <div style={{ marginBottom: '15px', background: '#161b22', padding: '12px', borderRadius: '6px', border: '1px solid #30363d' }}>
         {!isEditingUsername ? (
           <div>
-            <span>Tu apodo actual: <strong>{username}</strong></span>
+            <span>Tu apodo actual: <strong className={getUserColorClass(username)}>{username}</strong></span>
             <button 
               onClick={() => setIsEditingUsername(true)} 
-              style={{ marginLeft: '10px', padding: '4px 8px', cursor: 'pointer' }}
+              style={{ marginLeft: '10px', padding: '4px 10px', cursor: 'pointer', background: '#238636', color: 'white', border: 'none', borderRadius: '4px' }}
             >
               Cambiar
             </button>
@@ -99,13 +107,13 @@ function App() {
               value={tempUsername}
               onChange={(e) => setTempUsername(e.target.value)}
               placeholder="Nuevo apodo..."
-              style={{ padding: '5px', marginRight: '5px' }}
+              style={{ padding: '6px', marginRight: '5px', background: '#0d1117', color: 'white', border: '1px solid #30363d', borderRadius: '4px' }}
             />
-            <button type="submit" style={{ padding: '5px 10px', cursor: 'pointer' }}>Guardar</button>
+            <button type="submit" style={{ padding: '6px 12px', cursor: 'pointer', background: '#238636', color: 'white', border: 'none', borderRadius: '4px' }}>Guardar</button>
             <button 
               type="button" 
               onClick={() => { setTempUsername(username); setIsEditingUsername(false); }}
-              style={{ marginLeft: '5px', padding: '5px 10px', cursor: 'pointer' }}
+              style={{ marginLeft: '5px', padding: '6px 12px', cursor: 'pointer', background: '#da3633', color: 'white', border: 'none', borderRadius: '4px' }}
             >
               Cancelar
             </button>
@@ -114,10 +122,13 @@ function App() {
       </div>
 
       {/* Ventana de mensajes */}
-      <div className="chat-box" style={{ height: '350px', border: '1px solid #444', overflowY: 'scroll', padding: '10px', background: '#111', marginBottom: '10px' }}>
+      <div className="chat-box" style={{ height: '350px', border: '1px solid #30363d', overflowY: 'scroll', padding: '12px', background: '#010409', marginBottom: '10px' }}>
         {messages.map((msg, index) => (
-          <div key={index} style={{ marginBottom: '8px' }}>
-            <strong>{msg.sender}:</strong> {msg.content}
+          <div key={index} style={{ marginBottom: '8px', wordBreak: 'break-word' }}>
+            <span className={getUserColorClass(msg.sender)} style={{ fontWeight: 'bold' }}>
+              {msg.sender}:
+            </span>{' '}
+            <span style={{ color: '#c9d1d9' }}>{msg.content}</span>
           </div>
         ))}
         <div ref={messagesEndRef} />
@@ -130,9 +141,9 @@ function App() {
           value={messageInput}
           onChange={(e) => setMessageInput(e.target.value)}
           placeholder="Escribe un mensaje y presiona Enviar..."
-          style={{ flex: 1, padding: '8px' }}
+          style={{ flex: 1, padding: '10px', background: '#0d1117', color: 'white', border: '1px solid #30363d', borderRadius: '4px' }}
         />
-        <button type="submit" style={{ padding: '8px 15px', background: '#007bff', color: 'white', border: 'none', cursor: 'pointer' }}>
+        <button type="submit" style={{ padding: '10px 20px', background: '#1f6feb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
           Enviar
         </button>
       </form>
