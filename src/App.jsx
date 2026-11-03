@@ -182,63 +182,63 @@ function App() {
   };
 
   return (
-    <div className="chat-container" style={{ padding: '20px', maxWidth: '650px', margin: '20px auto', color: 'white' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
+    <div className="chat-container">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
         <h2>Chat Global</h2>
         
-        <div style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '10px', background: '#161b22', padding: '6px 12px', borderRadius: '20px', border: '1px solid #30363d' }}>
+        <div className="status-pill">
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ height: '10px', width: '10px', backgroundColor: '#238636', borderRadius: '50%', display: 'inline-block' }}></span>
+            <span style={{ height: '8px', width: '8px', backgroundColor: '#238636', borderRadius: '50%', display: 'inline-block', boxShadow: '0 0 8px #238636' }}></span>
             <span style={{ color: '#3fb950', fontWeight: 'bold' }}>
               {userCount} {userCount === 1 ? 'conectado' : 'conectados'}
             </span>
           </div>
-          <span style={{ color: '#8b949e', borderLeft: '1px solid #30363d', paddingLeft: '10px' }}>
-            🧹 El chat se reinicia cada 30 minutos
+          <span style={{ color: '#8b949e', borderLeft: '1px solid #30363d', paddingLeft: '8px', fontSize: '12px' }}>
+            🧹 Se reinicia cada 30 min
           </span>
         </div>
       </div>
       
-      <div style={{ marginBottom: '15px', background: '#161b22', padding: '12px', borderRadius: '6px', border: '1px solid #30363d' }}>
+      <div style={{ marginBottom: '12px', background: '#161b22', padding: '10px 12px', borderRadius: '6px', border: '1px solid #30363d' }}>
         {!isEditingUsername ? (
-          <div>
-            <span>Tu apodo actual: <strong style={{ color: getUserColor(username) }}>{username}</strong></span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+            <span>Tu apodo: <strong style={{ color: getUserColor(username) }}>{username}</strong></span>
             <button 
               onClick={() => { setTempUsername(username); setIsEditingUsername(true); }} 
-              style={{ marginLeft: '10px', padding: '4px 10px', cursor: 'pointer', background: '#238636', color: 'white', border: 'none', borderRadius: '4px' }}
+              style={{ padding: '3px 8px', cursor: 'pointer', background: '#238636', color: 'white', border: 'none', borderRadius: '4px', fontSize: '12px' }}
             >
               Cambiar
             </button>
           </div>
         ) : (
-          <form onSubmit={handleUsernameSubmit}>
+          <form onSubmit={handleUsernameSubmit} style={{ display: 'flex', gap: '6px' }}>
             <input
               type="text"
               value={tempUsername}
               onChange={(e) => setTempUsername(e.target.value)}
               placeholder="Nuevo apodo..."
-              style={{ padding: '6px', marginRight: '5px', background: '#0d1117', color: 'white', border: '1px solid #30363d', borderRadius: '4px' }}
+              style={{ flex: 1, padding: '5px 8px', background: '#0d1117', color: 'white', border: '1px solid #30363d', borderRadius: '4px', fontSize: '13px' }}
             />
-            <button type="submit" style={{ padding: '6px 12px', cursor: 'pointer', background: '#238636', color: 'white', border: 'none', borderRadius: '4px' }}>Guardar</button>
+            <button type="submit" style={{ padding: '5px 10px', cursor: 'pointer', background: '#238636', color: 'white', border: 'none', borderRadius: '4px', fontSize: '12px' }}>Guardar</button>
             <button 
               type="button" 
               onClick={() => setIsEditingUsername(false)}
-              style={{ marginLeft: '5px', padding: '6px 12px', cursor: 'pointer', background: '#da3633', color: 'white', border: 'none', borderRadius: '4px' }}
+              style={{ padding: '5px 10px', cursor: 'pointer', background: '#da3633', color: 'white', border: 'none', borderRadius: '4px', fontSize: '12px' }}
             >
-              Cancelar
+              X
             </button>
           </form>
         )}
       </div>
 
       {/* Caja de mensajes */}
-      <div className="chat-box" style={{ height: '380px', border: '1px solid #30363d', overflowY: 'scroll', padding: '12px', background: '#010409', marginBottom: '10px', display: 'flex', flexDirection: 'column', justifyContent: isLoading ? 'center' : 'flex-start', alignItems: isLoading ? 'center' : 'stretch' }}>
+      <div className="chat-box">
         {isLoading ? (
-          <div style={{ color: '#8b949e', textAlign: 'center' }}>
-            <p>⏳ Conectando con el servidor (despertando Render)...</p>
+          <div style={{ color: '#8b949e', textAlign: 'center', margin: 'auto' }}>
+            <p>⏳ Conectando al servidor...</p>
           </div>
         ) : messages.length === 0 ? (
-          <div style={{ color: '#8b949e', textAlign: 'center', marginTop: '140px' }}>
+          <div style={{ color: '#8b949e', textAlign: 'center', margin: 'auto', fontSize: '13px' }}>
             No hay mensajes aún. ¡Sé el primero en escribir!
           </div>
         ) : (
@@ -247,51 +247,49 @@ function App() {
             const isEditingThis = editingMessageId === (msg.id || index);
 
             return (
-              <div key={msg.id || index} style={{ marginBottom: '8px', wordBreak: 'break-word', padding: '4px 8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ flex: 1 }}>
-                    <span style={{ color: getUserColor(msg.sender), fontWeight: 'bold', marginRight: '8px', fontSize: '14px' }}>
-                      {msg.sender}:
+              <div key={msg.id || index} className="chat-message-row">
+                <div style={{ flex: 1, wordBreak: 'break-word' }}>
+                  <span style={{ color: getUserColor(msg.sender), fontWeight: 'bold', marginRight: '6px', fontSize: '13px' }}>
+                    {msg.sender}:
+                  </span>
+
+                  {isEditingThis ? (
+                    <div style={{ display: 'inline-flex', gap: '6px', marginTop: '4px' }}>
+                      <input
+                        type="text"
+                        value={editingText}
+                        onChange={(e) => setEditingText(e.target.value)}
+                        style={{ padding: '4px 8px', background: '#161b22', color: 'white', border: '1px solid #30363d', borderRadius: '4px', fontSize: '13px' }}
+                      />
+                      <button 
+                        onClick={() => saveEditedMessage(msg.id || index)}
+                        style={{ padding: '4px 8px', background: '#238636', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                      >
+                        OK
+                      </button>
+                      <button 
+                        onClick={() => setEditingMessageId(null)}
+                        style={{ padding: '4px 8px', background: '#30363d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                      >
+                        X
+                      </button>
+                    </div>
+                  ) : (
+                    <span style={{ color: '#c9d1d9', fontSize: '13px' }}>
+                      {renderMessageContent(msg.content)}
+                      {msg.edited && <span style={{ color: '#8b949e', fontSize: '10px', marginLeft: '6px' }}>(editado)</span>}
                     </span>
-
-                    {isEditingThis ? (
-                      <div style={{ display: 'inline-flex', gap: '6px', marginTop: '4px' }}>
-                        <input
-                          type="text"
-                          value={editingText}
-                          onChange={(e) => setEditingText(e.target.value)}
-                          style={{ padding: '4px 8px', background: '#161b22', color: 'white', border: '1px solid #30363d', borderRadius: '4px' }}
-                        />
-                        <button 
-                          onClick={() => saveEditedMessage(msg.id || index)}
-                          style={{ padding: '4px 8px', background: '#238636', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
-                        >
-                          Guardar
-                        </button>
-                        <button 
-                          onClick={() => setEditingMessageId(null)}
-                          style={{ padding: '4px 8px', background: '#30363d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-                    ) : (
-                      <span style={{ color: '#c9d1d9', fontSize: '14px' }}>
-                        {renderMessageContent(msg.content)}
-                        {msg.edited && <span style={{ color: '#8b949e', fontSize: '11px', marginLeft: '6px' }}>(editado)</span>}
-                      </span>
-                    )}
-                  </div>
-
-                  {isMyMessage && !isEditingThis && (
-                    <button 
-                      onClick={() => { setEditingMessageId(msg.id || index); setEditingText(msg.content); }}
-                      style={{ background: 'transparent', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: '12px', textDecoration: 'underline', marginLeft: '10px', flexShrink: 0 }}
-                    >
-                      Editar
-                    </button>
                   )}
                 </div>
+
+                {isMyMessage && !isEditingThis && (
+                  <button 
+                    onClick={() => { setEditingMessageId(msg.id || index); setEditingText(msg.content); }}
+                    style={{ background: 'transparent', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: '11px', textDecoration: 'underline', marginLeft: '8px', flexShrink: 0 }}
+                  >
+                    Editar
+                  </button>
+                )}
               </div>
             );
           })
@@ -299,15 +297,15 @@ function App() {
         <div ref={messagesEndRef} />
       </div>
 
-      <form onSubmit={sendMessage} style={{ display: 'flex', gap: '10px' }}>
+      <form onSubmit={sendMessage} style={{ display: 'flex', gap: '8px' }}>
         <input
           type="text"
           value={messageInput}
           onChange={(e) => setMessageInput(e.target.value)}
-          placeholder="Escribe un mensaje o pega una URL..."
-          style={{ flex: 1, padding: '10px', background: '#0d1117', color: 'white', border: '1px solid #30363d', borderRadius: '4px' }}
+          placeholder="Escribe un mensaje o URL..."
+          style={{ flex: 1, padding: '8px 10px', background: '#0d1117', color: 'white', border: '1px solid #30363d', borderRadius: '6px', fontSize: '13px' }}
         />
-        <button type="submit" style={{ padding: '10px 20px', background: '#1f6feb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+        <button type="submit" style={{ padding: '8px 16px', background: '#1f6feb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>
           Enviar
         </button>
       </form>
