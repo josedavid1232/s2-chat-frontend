@@ -24,13 +24,13 @@ function App() {
       onConnect: () => {
         console.log('Conectado al WebSocket');
         
-        // Suscripción al chat global
+        // Suscripción al chat global de mensajes
         client.subscribe('/topic/public', (message) => {
           const receivedMessage = JSON.parse(message.body);
           setMessages((prevMessages) => [...prevMessages, receivedMessage]);
         });
 
-        // Suscripción al contador de usuarios en línea
+        // Suscripción al contador de usuarios en línea (/topic/users)
         client.subscribe('/topic/users', (message) => {
           const count = JSON.parse(message.body);
           setUserCount(count);
@@ -88,7 +88,7 @@ function App() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
         <h2>Chat Global</h2>
         
-        {/* Indicador con el número de personas conectadas */}
+        {/* Indicador con el número real de personas conectadas */}
         <div style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px', background: '#161b22', padding: '6px 12px', borderRadius: '20px', border: '1px solid #30363d' }}>
           <span style={{
             height: '10px',
