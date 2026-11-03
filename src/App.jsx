@@ -3,11 +3,25 @@ import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import './App.css';
 
+// Función para generar un color consistente basado en el texto del nombre de usuario
+const getUserColor = (name) => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  // Paleta de colores atractivos y legibles sobre fondo oscuro
+  const colors = [
+    '#ff5555', '#58a6ff', '#3fb950', '#d29922', 
+    '#bc8cff', '#f778ba', '#79c0ff', '#56d364', '#e3b341'
+  ];
+  return colors[Math.abs(hash) % colors.length];
+};
+
 function App() {
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
   
-  // 1. Cargar el usuario guardado en localStorage o generar uno aleatorio si no existe
+  // Cargar el usuario guardado en localStorage o generar uno aleatorio si no existe
   const [username, setUsername] = useState(() => {
     return localStorage.getItem('chat_username') || ('Heroe_' + Math.floor(Math.random() * 1000));
   });
@@ -95,13 +109,13 @@ function App() {
     }
   };
 
-  // 2. Guardar el nuevo apodo en localStorage cuando el usuario lo cambie
+  // Guardar el nuevo apodo en localStorage cuando el usuario lo cambie
   const handleUsernameSubmit = (e) => {
     e.preventDefault();
     if (tempUsername.trim()) {
       const newName = tempUsername.trim();
       setUsername(newName);
-      localStorage.setItem('chat_username', newName); // <--- Se guarda de forma persistente
+      localStorage.setItem('chat_username', newName);
       setIsEditingUsername(false);
     }
   };
@@ -133,7 +147,7 @@ function App() {
       <div style={{ marginBottom: '15px', background: '#161b22', padding: '12px', borderRadius: '6px', border: '1px solid #30363d' }}>
         {!isEditingUsername ? (
           <div>
-            <span>Tu apodo actual: <strong style={{ color: '#ff5555' }}>{username}</strong></span>
+            <span>Tu apodo actual: <strong style={{ color: getUserColor(username) }}>{username}</strong></span>
             <button 
               onClick={() => { setTempUsername(username); setIsEditingUsername(true); }} 
               style={{ marginLeft: '10px', padding: '4px 10px', cursor: 'pointer', background: '#238636', color: 'white', border: 'none', borderRadius: '4px' }}
@@ -162,7 +176,7 @@ function App() {
         )}
       </div>
 
-      {/* Ventana de mensajes con indicador de carga y limitación de visualización */}
+      {/* Ventana de mensajes con colores dinámicos por usuario */}
       <div className="chat-box" style={{ height: '350px', border: '1px solid #30363d', overflowY: 'scroll', padding: '12px', background: '#010409', marginBottom: '10px', display: 'flex', flexDirection: 'column', justifyContent: isLoading ? 'center' : 'flex-start', alignItems: isLoading ? 'center' : 'stretch' }}>
         {isLoading ? (
           <div style={{ color: '#8b949e', textAlign: 'center' }}>
@@ -175,7 +189,7 @@ function App() {
         ) : (
           messages.slice(-50).map((msg, index) => (
             <div key={index} style={{ marginBottom: '8px', wordBreak: 'break-word' }}>
-              <span style={{ color: '#ff5555', fontWeight: 'bold' }}>
+              <span style={{ color: getUserColor(msg.sender), fontWeight: 'bold' }}>
                 {msg.sender}:
               </span>{' '}
               <span style={{ color: '#c9d1d9' }}>{msg.content}</span>
