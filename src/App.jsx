@@ -9,7 +9,8 @@ function App() {
   const [username, setUsername] = useState('Heroe_' + Math.floor(Math.random() * 1000));
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [tempUsername, setTempUsername] = useState(username);
-  const [userCount, setUserCount] = useState(0); // Estado para el contador de personas conectadas
+  const [userCount, setUserCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true); // <--- Nuevo estado para saber si está cargando
   
   const stompClientRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -17,15 +18,19 @@ function App() {
   useEffect(() => {
     const backendUrl = import.meta.env.VITE_API_URL || 'https://s2-chat-backend.onrender.com';
     
-    // 1. Cargar el historial de mensajes guardados en MySQL al iniciar
+    // 1. Cargar el historial con manejo de estado de carga
     fetch(`${backendUrl}/messages`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
           setMessages(data);
         }
+        setIsLoading(false); // <--- Ocultar indicador cuando responda
       })
-      .catch(err => console.error("Error cargando el historial:", err));
+      .catch(err => {
+        console.error("Error cargando el historial:", err);
+        setIsLoading(false);
+      });
 
     // 2. Configurar la conexión WebSocket
     const socketFactory = () => new SockJS(`${backendUrl}/ws`);
@@ -36,13 +41,11 @@ function App() {
       onConnect: () => {
         console.log('Conectado al WebSocket');
         
-        // Suscripción al chat global de mensajes
         client.subscribe('/topic/public', (message) => {
           const receivedMessage = JSON.parse(message.body);
           setMessages((prevMessages) => [...prevMessages, receivedMessage]);
         });
 
-        // Suscripción al contador de usuarios en línea (/topic/users)
         client.subscribe('/topic/users', (message) => {
           const count = JSON.parse(message.body);
           setUserCount(count);
@@ -100,7 +103,6 @@ function App() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
         <h2>Chat Global</h2>
         
-        {/* Indicador con el número real de personas conectadas */}
         <div style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px', background: '#161b22', padding: '6px 12px', borderRadius: '20px', border: '1px solid #30363d' }}>
           <span style={{
             height: '10px',
@@ -115,7 +117,6 @@ function App() {
         </div>
       </div>
       
-      {/* Sección para cambiar el apodo */}
       <div style={{ marginBottom: '15px', background: '#161b22', padding: '12px', borderRadius: '6px', border: '1px solid #30363d' }}>
         {!isEditingUsername ? (
           <div>
@@ -148,20 +149,29 @@ function App() {
         )}
       </div>
 
-      {/* Ventana de mensajes */}
-      <div className="chat-box" style={{ height: '350px', border: '1px solid #30363d', overflowY: 'scroll', padding: '12px', background: '#010409', marginBottom: '10px' }}>
-        {messages.map((msg, index) => (
-          <div key={index} style={{ marginBottom: '8px', wordBreak: 'break-word' }}>
-            <span style={{ color: '#ff5555', fontWeight: 'bold' }}>
-              {msg.sender}:
-            </span>{' '}
-            <span style={{ color: '#c9d1d9' }}>{msg.content}</span>
+      {/* Ventana de mensajes con indicador de carga */}
+      <div className="chat-box" style={{ height: '350px', border: '1px solid #30363d', overflowY: 'scroll', padding: '12px', background: '#010409', marginBottom: '10px', display: 'flex', flexDirection: 'column', justifyContent: isLoading ? 'center' : 'flex-start', alignItems: isLoading ? 'center' : 'stretch' }}>
+        {isLoading ? (
+          <div style={{ color: '#8b949e', textAlign: 'center' }}>
+            <p>⏳ Conectando con el servidor (despertando Render)...</p>
           </div>
-        ))}
+        ) : messages.length === 0 ? (
+          <div style={{ color: '#8b949e', textAlign: 'center', marginTop: '120px' }}>
+            No hay mensajes aún. ¡Sé el primero en escribir!
+          </div>
+        ) : (
+          messages.map((msg, index) => (
+            <div key={index} style={{ marginBottom: '8px', wordBreak: 'break-word' }}>
+              <span style={{ color: '#ff5555', fontWeight: 'bold' }}>
+                {msg.sender}:
+              </span>{' '}
+              <span style={{ color: '#c9d1d9' }}>{msg.content}</span>
+            </div>
+          ))
+        )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Formulario de envío */}
       <form onSubmit={sendMessage} style={{ display: 'flex', gap: '10px' }}>
         <input
           type="text"
