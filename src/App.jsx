@@ -13,16 +13,6 @@ function App() {
   const stompClientRef = useRef(null);
   const messagesEndRef = useRef(null);
 
-  // Función para asignar un color único y constante basado en las letras del nombre de usuario
-  const getUserColorClass = (name) => {
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const index = Math.abs(hash) % 8; // Tenemos 8 colores definidos en el CSS
-    return `user-color-${index}`;
-  };
-
   useEffect(() => {
     const backendUrl = import.meta.env.VITE_API_URL || 'https://s2-chat-backend.onrender.com';
     const socketFactory = () => new SockJS(`${backendUrl}/ws`);
@@ -86,13 +76,14 @@ function App() {
 
   return (
     <div className="chat-container" style={{ padding: '20px', maxWidth: '600px', margin: '20px auto', color: 'white' }}>
-      <h2>RuneScape Classic Chat - Canal Principal</h2>
+      {/* Título limpio como Chat Global */}
+      <h2>Chat Global</h2>
       
       {/* Sección para cambiar el apodo */}
       <div style={{ marginBottom: '15px', background: '#161b22', padding: '12px', borderRadius: '6px', border: '1px solid #30363d' }}>
         {!isEditingUsername ? (
           <div>
-            <span>Tu apodo actual: <strong className={getUserColorClass(username)}>{username}</strong></span>
+            <span>Tu apodo actual: <strong style={{ color: '#ff5555' }}>{username}</strong></span>
             <button 
               onClick={() => setIsEditingUsername(true)} 
               style={{ marginLeft: '10px', padding: '4px 10px', cursor: 'pointer', background: '#238636', color: 'white', border: 'none', borderRadius: '4px' }}
@@ -125,7 +116,8 @@ function App() {
       <div className="chat-box" style={{ height: '350px', border: '1px solid #30363d', overflowY: 'scroll', padding: '12px', background: '#010409', marginBottom: '10px' }}>
         {messages.map((msg, index) => (
           <div key={index} style={{ marginBottom: '8px', wordBreak: 'break-word' }}>
-            <span className={getUserColorClass(msg.sender)} style={{ fontWeight: 'bold' }}>
+            {/* Nombres en rojo */}
+            <span style={{ color: '#ff5555', fontWeight: 'bold' }}>
               {msg.sender}:
             </span>{' '}
             <span style={{ color: '#c9d1d9' }}>{msg.content}</span>
