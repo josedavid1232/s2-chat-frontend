@@ -16,6 +16,18 @@ function App() {
 
   useEffect(() => {
     const backendUrl = import.meta.env.VITE_API_URL || 'https://s2-chat-backend.onrender.com';
+    
+    // 1. Cargar el historial de mensajes guardados en MySQL al iniciar
+    fetch(`${backendUrl}/messages`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setMessages(data);
+        }
+      })
+      .catch(err => console.error("Error cargando el historial:", err));
+
+    // 2. Configurar la conexión WebSocket
     const socketFactory = () => new SockJS(`${backendUrl}/ws`);
     
     const client = new Client({
