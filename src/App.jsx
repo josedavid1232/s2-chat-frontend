@@ -183,18 +183,17 @@ function App() {
 
   return (
     <div className="chat-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+      {/* Cabecera unificada y moderna */}
+      <div className="chat-header-bar">
         <h2>Chat Global</h2>
         
         <div className="status-pill">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ height: '8px', width: '8px', backgroundColor: '#238636', borderRadius: '50%', display: 'inline-block', boxShadow: '0 0 8px #238636' }}></span>
-            <span style={{ color: '#3fb950', fontWeight: 'bold' }}>
-              {userCount} {userCount === 1 ? 'conectado' : 'conectados'}
-            </span>
-          </div>
-          <span style={{ color: '#8b949e', borderLeft: '1px solid #30363d', paddingLeft: '8px', fontSize: '12px' }}>
-            🧹 Se reinicia cada 30 min
+          <span style={{ height: '8px', width: '8px', backgroundColor: '#238636', borderRadius: '50%', display: 'inline-block', boxShadow: '0 0 8px #238636' }}></span>
+          <span style={{ color: '#3fb950', fontWeight: 'bold' }}>
+            {userCount} {userCount === 1 ? 'conectado' : 'conectados'}
+          </span>
+          <span style={{ color: '#8b949e', borderLeft: '1px solid #30363d', paddingLeft: '8px', fontSize: '11px' }}>
+            🧹 30 min
           </span>
         </div>
       </div>
