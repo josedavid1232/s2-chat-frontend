@@ -92,7 +92,7 @@ function App() {
           const receivedMessage = JSON.parse(message.body);
           setMessages((prevMessages) => {
             // Si el mensaje recibido es una actualización/edición de uno existente
-            const existsIndex = prevMessages.findIndex(m => m.id && m.id === receivedMessage.id);
+            const existsIndex = prevMessages.findIndex(m => m.id !== undefined && m.id === receivedMessage.id);
             if (existsIndex !== -1) {
               const updated = [...prevMessages];
               updated[existsIndex] = receivedMessage;
@@ -156,13 +156,17 @@ function App() {
     }
   };
 
-  // Guardar edición de mensaje
-  const saveEditedMessage = (msgId) => {
+  // Guardar edición de mensaje de forma robusta
+  const saveEditedMessage = (msgId, index) => {
     if (!editingText.trim()) return;
+
+    // Buscamos el mensaje real en el array actual usando id o el índice de respaldo
+    const targetMessage = messages.find(m => m.id === msgId || messages.indexOf(m) === index);
+    const identifier = targetMessage ? (targetMessage.id !== undefined ? targetMessage.id : index) : msgId;
 
     if (stompClientRef.current && stompClientRef.current.connected) {
       const editPayload = {
-        id: msgId,
+        id: identifier,
         sender: username,
         content: editingText.trim(),
         edited: true,
@@ -174,8 +178,11 @@ function App() {
         body: JSON.stringify(editPayload),
       });
 
-      // Actualización local defensiva mientras llega la retransmisión
-      setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content: editingText.trim(), edited: true } : m));
+      // Actualización local inmediata para reflejar el cambio sin esperar el socket
+      setMessages(prev => prev.map((m, idx) => 
+        (m.id === identifier || idx === index) ? { ...m, content: editingText.trim(), edited: true } : m
+      ));
+      
       setEditingMessageId(null);
       setEditingText('');
     }
@@ -243,10 +250,11 @@ function App() {
         ) : (
           messages.slice(-50).map((msg, index) => {
             const isMyMessage = msg.sender === username;
-            const isEditingThis = editingMessageId === (msg.id || index);
+            const messageKey = msg.id !== undefined ? msg.id : index;
+            const isEditingThis = editingMessageId === messageKey;
 
             return (
-              <div key={msg.id || index} className="chat-message-row">
+              <div key={messageKey} className="chat-message-row">
                 <div style={{ flex: 1, wordBreak: 'break-word' }}>
                   <span style={{ color: getUserColor(msg.sender), fontWeight: 'bold', marginRight: '6px', fontSize: '13px' }}>
                     {msg.sender}:
@@ -261,7 +269,7 @@ function App() {
                         style={{ padding: '4px 8px', background: '#161b22', color: 'white', border: '1px solid #30363d', borderRadius: '4px', fontSize: '13px' }}
                       />
                       <button 
-                        onClick={() => saveEditedMessage(msg.id || index)}
+                        onClick={() => saveEditedMessage(msg.id, index)}
                         style={{ padding: '4px 8px', background: '#238636', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
                       >
                         OK
@@ -283,7 +291,7 @@ function App() {
 
                 {isMyMessage && !isEditingThis && (
                   <button 
-                    onClick={() => { setEditingMessageId(msg.id || index); setEditingText(msg.content); }}
+                    onClick={() => { setEditingMessageId(messageKey); setEditingText(msg.content); }}
                     style={{ background: 'transparent', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: '11px', textDecoration: 'underline', marginLeft: '8px', flexShrink: 0 }}
                   >
                     Editar
