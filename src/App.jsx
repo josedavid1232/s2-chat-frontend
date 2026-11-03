@@ -6,7 +6,12 @@ import './App.css';
 function App() {
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
-  const [username, setUsername] = useState('Heroe_' + Math.floor(Math.random() * 1000));
+  
+  // 1. Cargar el usuario guardado en localStorage o generar uno aleatorio si no existe
+  const [username, setUsername] = useState(() => {
+    return localStorage.getItem('chat_username') || ('Heroe_' + Math.floor(Math.random() * 1000));
+  });
+
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [tempUsername, setTempUsername] = useState(username);
   const [userCount, setUserCount] = useState(0);
@@ -18,7 +23,7 @@ function App() {
   useEffect(() => {
     const backendUrl = import.meta.env.VITE_API_URL || 'https://s2-chat-backend.onrender.com';
     
-    // 1. Cargar el historial con manejo de estado de carga
+    // Cargar el historial
     fetch(`${backendUrl}/messages`)
       .then(res => res.json())
       .then(data => {
@@ -32,7 +37,7 @@ function App() {
         setIsLoading(false);
       });
 
-    // 2. Configurar la conexión WebSocket
+    // Configurar WebSocket
     const socketFactory = () => new SockJS(`${backendUrl}/ws`);
     
     const client = new Client({
@@ -90,10 +95,13 @@ function App() {
     }
   };
 
+  // 2. Guardar el nuevo apodo en localStorage cuando el usuario lo cambie
   const handleUsernameSubmit = (e) => {
     e.preventDefault();
     if (tempUsername.trim()) {
-      setUsername(tempUsername.trim());
+      const newName = tempUsername.trim();
+      setUsername(newName);
+      localStorage.setItem('chat_username', newName); // <--- Se guarda de forma persistente
       setIsEditingUsername(false);
     }
   };
@@ -127,7 +135,7 @@ function App() {
           <div>
             <span>Tu apodo actual: <strong style={{ color: '#ff5555' }}>{username}</strong></span>
             <button 
-              onClick={() => setIsEditingUsername(true)} 
+              onClick={() => { setTempUsername(username); setIsEditingUsername(true); }} 
               style={{ marginLeft: '10px', padding: '4px 10px', cursor: 'pointer', background: '#238636', color: 'white', border: 'none', borderRadius: '4px' }}
             >
               Cambiar
@@ -145,7 +153,7 @@ function App() {
             <button type="submit" style={{ padding: '6px 12px', cursor: 'pointer', background: '#238636', color: 'white', border: 'none', borderRadius: '4px' }}>Guardar</button>
             <button 
               type="button" 
-              onClick={() => { setTempUsername(username); setIsEditingUsername(false); }}
+              onClick={() => setIsEditingUsername(false)}
               style={{ marginLeft: '5px', padding: '6px 12px', cursor: 'pointer', background: '#da3633', color: 'white', border: 'none', borderRadius: '4px' }}
             >
               Cancelar
