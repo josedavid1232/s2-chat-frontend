@@ -10,7 +10,7 @@ function App() {
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [tempUsername, setTempUsername] = useState(username);
   const [userCount, setUserCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true); // <--- Nuevo estado para saber si está cargando
+  const [isLoading, setIsLoading] = useState(true);
   
   const stompClientRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -25,7 +25,7 @@ function App() {
         if (Array.isArray(data)) {
           setMessages(data);
         }
-        setIsLoading(false); // <--- Ocultar indicador cuando responda
+        setIsLoading(false);
       })
       .catch(err => {
         console.error("Error cargando el historial:", err);
@@ -149,7 +149,7 @@ function App() {
         )}
       </div>
 
-      {/* Ventana de mensajes con indicador de carga */}
+      {/* Ventana de mensajes con indicador de carga y limitación de visualización */}
       <div className="chat-box" style={{ height: '350px', border: '1px solid #30363d', overflowY: 'scroll', padding: '12px', background: '#010409', marginBottom: '10px', display: 'flex', flexDirection: 'column', justifyContent: isLoading ? 'center' : 'flex-start', alignItems: isLoading ? 'center' : 'stretch' }}>
         {isLoading ? (
           <div style={{ color: '#8b949e', textAlign: 'center' }}>
@@ -160,7 +160,7 @@ function App() {
             No hay mensajes aún. ¡Sé el primero en escribir!
           </div>
         ) : (
-          messages.map((msg, index) => (
+          messages.slice(-50).map((msg, index) => (
             <div key={index} style={{ marginBottom: '8px', wordBreak: 'break-word' }}>
               <span style={{ color: '#ff5555', fontWeight: 'bold' }}>
                 {msg.sender}:
