@@ -12,32 +12,8 @@ function App() {
   const [userCount, setUserCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Estado para la cuenta regresiva (30 minutos = 1800 segundos)
-  const [timeLeft, setTimeLeft] = useState(1800);
-  
   const stompClientRef = useRef(null);
   const messagesEndRef = useRef(null);
-
-  // Efecto para la cuenta regresiva del temporizador
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          return 1800; // Reinicia a 30 minutos al llegar a cero
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  // Función auxiliar para formatear los segundos en formato MM:SS
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
 
   useEffect(() => {
     const backendUrl = import.meta.env.VITE_API_URL || 'https://s2-chat-backend.onrender.com';
@@ -141,7 +117,7 @@ function App() {
             </span>
           </div>
           <span style={{ color: '#8b949e', borderLeft: '1px solid #30363d', paddingLeft: '10px' }}>
-            🧹 Limpieza: <strong style={{ color: '#c9d1d9' }}>{formatTime(timeLeft)}</strong>
+            🧹 El chat se reinicia cada 30 minutos
           </span>
         </div>
       </div>
