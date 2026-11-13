@@ -35,12 +35,12 @@
   padding-bottom: 12px;
 }
 
-/* Título con degradado cibernético */
+/* Título con degradado en tonos rojos y cálidos */
 .chat-container h2 {
   font-size: 1.4rem;
   font-weight: 800;
   margin: 0;
-  background: linear-gradient(90deg, #58a6ff, #bc8cff);
+  background: linear-gradient(90deg, #ff5555, #ff7b72, #ffa657);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   letter-spacing: 0.5px;
@@ -73,7 +73,7 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-/* Caja Principal de Mensajes con un fondo azul marino texturizado para que resalte */
+/* Caja Principal de Mensajes con un fondo azul marino texturizado */
 .chat-box {
   height: 420px;
   border: 1px solid #30363d !important;
