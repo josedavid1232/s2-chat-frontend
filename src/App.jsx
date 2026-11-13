@@ -91,7 +91,13 @@ function App() {
          
         client.subscribe('/topic/public', (message) => {
           const receivedMessage = JSON.parse(message.body);
+          
           setMessages((prevMessages) => {
+            // Manejo de mensaje eliminado por tipo de evento o ID
+            if (receivedMessage.type === 'DELETE') {
+              return prevMessages.filter(m => (m.id !== undefined && m.id !== receivedMessage.id));
+            }
+
             const existsIndex = prevMessages.findIndex(m => m.id !== undefined && m.id === receivedMessage.id);
             if (existsIndex !== -1) {
               const updated = [...prevMessages];
@@ -183,6 +189,31 @@ function App() {
        
       setEditingMessageId(null);
       setEditingText('');
+      setActiveMenuId(null);
+    }
+  };
+
+  // Eliminar mensaje
+  const deleteMessage = (msgId, index) => {
+    const targetMessage = messages.find(m => m.id === msgId || messages.indexOf(m) === index);
+    const identifier = targetMessage ? (targetMessage.id !== undefined ? targetMessage.id : index) : msgId;
+
+    if (stompClientRef.current && stompClientRef.current.connected) {
+      const deletePayload = {
+        id: identifier,
+        sender: username,
+        type: 'DELETE'
+      };
+
+      // Si tu backend soporta una ruta específica de eliminación, puedes cambiar el destination. 
+      // Por compatibilidad general de STOMP, enviamos el payload de eliminación:
+      stompClientRef.current.publish({
+        destination: '/app/chat.deleteMessage',
+        body: JSON.stringify(deletePayload),
+      });
+
+      // Actualización local inmediata
+      setMessages(prev => prev.filter((m, idx) => m.id !== identifier && idx !== index));
       setActiveMenuId(null);
     }
   };
@@ -300,7 +331,7 @@ function App() {
                     )}
                   </div>
 
-                  {/* Menú flotante de 3 puntos (⋮) estilo WhatsApp/Discord */}
+                  {/* Menú flotante de 3 puntos (⋮) con Editar y Eliminar */}
                   {isMyMessage && !isEditingThis && (
                     <div className="message-actions-container">
                       <button 
@@ -322,6 +353,12 @@ function App() {
                             }}
                           >
                             ✏️ Editar
+                          </button>
+                          <button 
+                            className="dropdown-item delete"
+                            onClick={() => deleteMessage(msg.id, index)}
+                          >
+                            🗑️ Eliminar
                           </button>
                         </div>
                       )}
