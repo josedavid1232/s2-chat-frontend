@@ -197,6 +197,7 @@ button:hover {
 }
 
 .message-bubble {
+  position: relative; /* Clave para el posicionamiento absoluto del botón */
   max-width: 75%;
   padding: 10px 14px;
   border-radius: 14px;
@@ -234,4 +235,32 @@ button:hover {
   box-shadow: 0 3px 6px rgba(0,0,0,0.4);
   border: 1px solid rgba(255, 255, 255, 0.1);
   user-select: none;
+}
+
+/* Botón de editar flotante y discreto (Estilo Discord) */
+.edit-btn-float {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 10px;
+  background: rgba(13, 17, 23, 0.9);
+  border: 1px solid #30363d;
+  color: #8b949e;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+/* Hace visible el botón únicamente al pasar el cursor sobre la burbuja */
+.message-bubble:hover .edit-btn-float {
+  opacity: 1;
+}
+
+.edit-btn-float:hover {
+  background: #21262d;
+  color: #58a6ff;
+  border-color: #58a6ff;
 }
