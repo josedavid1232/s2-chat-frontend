@@ -17,13 +17,13 @@
   --text-muted: #8b949e;
 }
 
-/* Contenedor Principal del Chat (Panel Flotante) */
+/* Contenedor Principal del Chat (Panel Flotante Estilizado) */
 .chat-container {
-  background: var(--panel-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 14px;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), 0 0 20px rgba(31, 111, 235, 0.15);
-  padding: 16px;
+  background: linear-gradient(145deg, #0d1117 0%, #090d16 100%);
+  border: 1px solid #30363d;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(31, 111, 235, 0.12);
+  padding: 20px;
   max-width: 100%;
   box-sizing: border-box;
   color: #ffffff;
@@ -35,14 +35,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   border-bottom: 1px solid var(--border-color);
-  padding-bottom: 10px;
+  padding-bottom: 12px;
 }
 
 /* Título con degradado cibernético */
 .chat-container h2 {
-  font-size: 1.3rem;
+  font-size: 1.4rem;
   font-weight: 800;
   margin: 0;
   background: linear-gradient(90deg, #58a6ff, #bc8cff);
@@ -58,35 +58,49 @@
   align-items: center;
   gap: 8px;
   background: var(--card-bg);
-  padding: 4px 10px;
-  border-radius: 15px;
+  padding: 5px 12px;
+  border-radius: 20px;
   border: 1px solid var(--border-color);
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Barra de Perfil / Apodo Rediseñada */
+.user-profile-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  background: rgba(22, 27, 34, 0.7);
+  backdrop-filter: blur(8px);
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 /* Caja Principal de Mensajes con Textura Avanzada tipo Discord */
 .chat-box {
   height: 420px;
   border: 1px solid var(--border-accent) !important;
-  border-radius: 10px !important;
+  border-radius: 12px !important;
   overflow-y: auto;
   padding: 16px;
-  background: radial-gradient(circle at 50% 50%, #0e1626 0%, #070a12 100%) !important;
-  background-image: radial-gradient(rgba(88, 166, 255, 0.12) 1.5px, transparent 1.5px);
+  background: radial-gradient(circle at 50% 50%, #0e1626 0%, #060911 100%) !important;
+  background-image: radial-gradient(rgba(88, 166, 255, 0.1) 1.5px, transparent 1.5px);
   background-size: 24px 24px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   display: flex;
   flex-direction: column;
   text-align: left !important;
-  box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 4px 16px rgba(0, 0, 0, 0.6);
 }
 
-/* Personalización del Scrollbar (Estilo Dark / Discord) */
+/* Personalización del Scrollbar */
 .chat-box::-webkit-scrollbar {
   width: 6px;
 }
 .chat-box::-webkit-scrollbar-track {
-  background: #070a12;
+  background: #060911;
 }
 .chat-box::-webkit-scrollbar-thumb {
   background: #30363d;
@@ -96,18 +110,61 @@
   background: #484f58;
 }
 
-/* Inputs de Texto Interactivos */
-input[type="text"] {
+/* Contenedor del Input de Envío Rediseñado */
+.chat-input-form {
+  display: flex;
+  gap: 10px;
+  background: rgba(13, 17, 23, 0.8);
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Input de Texto principal */
+.chat-input-form input[type="text"] {
+  flex: 1;
+  padding: 10px 14px;
+  background: #060911;
+  color: white;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  font-size: 13.5px;
   outline: none;
   transition: all 0.2s ease-in-out;
 }
 
-input[type="text"]:focus {
-  border-color: var(--primary-blue) !important;
-  box-shadow: 0 0 8px rgba(31, 111, 235, 0.4);
+.chat-input-form input[type="text"]:focus {
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 10px rgba(31, 111, 235, 0.3);
 }
 
-/* Botones con animación al pasar el cursor */
+/* Botón de Enviar Estilizado */
+.chat-send-btn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #1f6feb 0%, #1158c7 100%);
+  color: white;
+  border: 1px solid #388bfd;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13.5px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(31, 111, 235, 0.3);
+}
+
+.chat-send-btn:hover {
+  background: linear-gradient(135deg, #388bfd 0%, #1f6feb 100%);
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(31, 111, 235, 0.4);
+}
+
+.chat-send-btn:active {
+  transform: translateY(0);
+}
+
+/* Botones genéricos secundarios */
 button {
   transition: all 0.2s ease;
   font-weight: 600;
@@ -115,29 +172,12 @@ button {
 
 button:hover {
   filter: brightness(1.15);
-  transform: translateY(-1px);
 }
-
-button:active {
-  transform: translateY(0);
-}
-
-/* Colores Dinámicos de Usuarios (Asignación por Hash) */
-.user-color-0 { color: #ff5555; }
-.user-color-1 { color: #58a6ff; }
-.user-color-2 { color: #3fb950; }
-.user-color-3 { color: #d29922; }
-.user-color-4 { color: #bc8cff; }
-.user-color-5 { color: #f778ba; }
-.user-color-6 { color: #79c0ff; }
-.user-color-7 { color: #56d364; }
-
 
 /* ============================================================
-   MEJORAS VISUALES: BURBUJAS DE CHAT Y AVATARES PROFESIONALES
+   MEJORAS VISUALES: BURBUJAS DE CHAT Y AVATARES
    ============================================================ */
 
-/* Contenedor individual del mensaje en formato burbuja */
 .chat-message {
   display: flex;
   align-items: flex-end;
@@ -152,12 +192,10 @@ button:active {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Alinea tus propios mensajes a la derecha */
 .chat-message.mine {
   flex-direction: row-reverse;
 }
 
-/* Estilo de la burbuja del mensaje con efecto flotante */
 .message-bubble {
   max-width: 75%;
   padding: 10px 14px;
@@ -171,7 +209,6 @@ button:active {
   border: 1px solid #30363d;
 }
 
-/* Color verde profesional tipo WhatsApp/Discord para tus mensajes */
 .chat-message.mine .message-bubble {
   background: linear-gradient(135deg, #0b6623 0%, #005c4b 100%);
   color: #ffffff;
@@ -179,12 +216,10 @@ button:active {
   border-top-right-radius: 3px;
 }
 
-/* Bordes para los mensajes de otros usuarios */
 .chat-message:not(.mine) .message-bubble {
   border-top-left-radius: 3px;
 }
 
-/* Avatar circular con la inicial del usuario y sombra brillante */
 .user-avatar {
   width: 34px;
   height: 34px;
