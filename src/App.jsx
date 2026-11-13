@@ -223,7 +223,7 @@ function App() {
               value={tempUsername}
               onChange={(e) => setTempUsername(e.target.value)}
               placeholder="Escribe tu nuevo apodo..."
-              style={{ flex: 1, padding: '6px 10px', background: '#060911', color: 'white', border: '1px solid #30363d', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+              style={{ flex: 1, padding: '6px 10px', background: '#080d17', color: 'white', border: '1px solid #30363d', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
             />
             <button type="submit" style={{ padding: '6px 12px', cursor: 'pointer', background: '#238636', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px' }}>Guardar</button>
             <button 
