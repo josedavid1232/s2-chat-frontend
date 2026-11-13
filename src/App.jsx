@@ -44,7 +44,7 @@ const renderMessageContent = (content) => {
 function App() {
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
-  
+   
   // Usuario guardado en localStorage o generado
   const [username, setUsername] = useState(() => {
     return localStorage.getItem('chat_username') || ('Heroe_' + Math.floor(Math.random() * 1000));
@@ -54,7 +54,7 @@ function App() {
   const [tempUsername, setTempUsername] = useState(username);
   const [userCount, setUserCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  
+   
   // Estado para la edición de mensajes
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editingText, setEditingText] = useState('');
@@ -64,7 +64,7 @@ function App() {
 
   useEffect(() => {
     const backendUrl = import.meta.env.VITE_API_URL || 'https://s2-chat-backend.onrender.com';
-    
+     
     // 1. Cargar historial
     fetch(`${backendUrl}/messages`)
       .then(res => res.json())
@@ -81,13 +81,13 @@ function App() {
 
     // 2. Configurar WebSocket
     const socketFactory = () => new SockJS(`${backendUrl}/ws`);
-    
+     
     const client = new Client({
       webSocketFactory: socketFactory,
       reconnectDelay: 5000,
       onConnect: () => {
         console.log('Conectado al WebSocket');
-        
+         
         client.subscribe('/topic/public', (message) => {
           const receivedMessage = JSON.parse(message.body);
           setMessages((prevMessages) => {
@@ -160,7 +160,6 @@ function App() {
   const saveEditedMessage = (msgId, index) => {
     if (!editingText.trim()) return;
 
-    // Buscamos el mensaje real en el array actual usando id o el índice de respaldo
     const targetMessage = messages.find(m => m.id === msgId || messages.indexOf(m) === index);
     const identifier = targetMessage ? (targetMessage.id !== undefined ? targetMessage.id : index) : msgId;
 
@@ -178,11 +177,10 @@ function App() {
         body: JSON.stringify(editPayload),
       });
 
-      // Actualización local inmediata para reflejar el cambio sin esperar el socket
       setMessages(prev => prev.map((m, idx) => 
         (m.id === identifier || idx === index) ? { ...m, content: editingText.trim(), edited: true } : m
       ));
-      
+       
       setEditingMessageId(null);
       setEditingText('');
     }
@@ -193,7 +191,7 @@ function App() {
       {/* Cabecera unificada y moderna */}
       <div className="chat-header-bar">
         <h2>Chat Global</h2>
-        
+         
         <div className="status-pill">
           <span style={{ height: '8px', width: '8px', backgroundColor: '#238636', borderRadius: '50%', display: 'inline-block', boxShadow: '0 0 8px #238636' }}></span>
           <span style={{ color: '#3fb950', fontWeight: 'bold' }}>
@@ -204,7 +202,7 @@ function App() {
           </span>
         </div>
       </div>
-      
+       
       <div style={{ marginBottom: '12px', background: '#161b22', padding: '10px 12px', borderRadius: '6px', border: '1px solid #30363d' }}>
         {!isEditingUsername ? (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
@@ -237,7 +235,7 @@ function App() {
         )}
       </div>
 
-      {/* Caja de mensajes */}
+      {/* Caja de mensajes con burbujas y avatares */}
       <div className="chat-box">
         {isLoading ? (
           <div style={{ color: '#8b949e', textAlign: 'center', margin: 'auto' }}>
@@ -254,49 +252,61 @@ function App() {
             const isEditingThis = editingMessageId === messageKey;
 
             return (
-              <div key={messageKey} className="chat-message-row">
-                <div style={{ flex: 1, wordBreak: 'break-word' }}>
-                  <span style={{ color: getUserColor(msg.sender), fontWeight: 'bold', marginRight: '6px', fontSize: '13px' }}>
-                    {msg.sender}:
-                  </span>
-
-                  {isEditingThis ? (
-                    <div style={{ display: 'inline-flex', gap: '6px', marginTop: '4px' }}>
-                      <input
-                        type="text"
-                        value={editingText}
-                        onChange={(e) => setEditingText(e.target.value)}
-                        style={{ padding: '4px 8px', background: '#161b22', color: 'white', border: '1px solid #30363d', borderRadius: '4px', fontSize: '13px' }}
-                      />
-                      <button 
-                        onClick={() => saveEditedMessage(msg.id, index)}
-                        style={{ padding: '4px 8px', background: '#238636', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
-                      >
-                        OK
-                      </button>
-                      <button 
-                        onClick={() => setEditingMessageId(null)}
-                        style={{ padding: '4px 8px', background: '#30363d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
-                      >
-                        X
-                      </button>
-                    </div>
-                  ) : (
-                    <span style={{ color: '#c9d1d9', fontSize: '13px' }}>
-                      {renderMessageContent(msg.content)}
-                      {msg.edited && <span style={{ color: '#8b949e', fontSize: '10px', marginLeft: '6px' }}>(editado)</span>}
-                    </span>
-                  )}
+              <div 
+                key={messageKey} 
+                className={`chat-message ${isMyMessage ? 'mine' : ''}`}
+                style={{ display: 'flex', alignItems: 'flex-end', marginBottom: '12px', gap: '10px', width: '100%', flexDirection: isMyMessage ? 'row-reverse' : 'row' }}
+              >
+                {/* Avatar circular con la inicial */}
+                <div className="user-avatar" style={{ backgroundColor: getUserColor(msg.sender) }}>
+                  {msg.sender ? msg.sender.charAt(0).toUpperCase() : '?'}
                 </div>
 
-                {isMyMessage && !isEditingThis && (
-                  <button 
-                    onClick={() => { setEditingMessageId(messageKey); setEditingText(msg.content); }}
-                    style={{ background: 'transparent', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: '11px', textDecoration: 'underline', marginLeft: '8px', flexShrink: 0 }}
-                  >
-                    Editar
-                  </button>
-                )}
+                {/* Burbuja de mensaje */}
+                <div className="message-bubble" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+                  <div style={{ flex: 1, wordBreak: 'break-word' }}>
+                    <span style={{ color: getUserColor(msg.sender), fontWeight: 'bold', marginRight: '6px', fontSize: '13px' }}>
+                      {msg.sender}:
+                    </span>
+
+                    {isEditingThis ? (
+                      <div style={{ display: 'inline-flex', gap: '6px', marginTop: '4px' }}>
+                        <input
+                          type="text"
+                          value={editingText}
+                          onChange={(e) => setEditingText(e.target.value)}
+                          style={{ padding: '4px 8px', background: '#161b22', color: 'white', border: '1px solid #30363d', borderRadius: '4px', fontSize: '13px' }}
+                        />
+                        <button 
+                          onClick={() => saveEditedMessage(msg.id, index)}
+                          style={{ padding: '4px 8px', background: '#238636', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                        >
+                          OK
+                        </button>
+                        <button 
+                          onClick={() => setEditingMessageId(null)}
+                          style={{ padding: '4px 8px', background: '#30363d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                        >
+                          X
+                        </button>
+                      </div>
+                    ) : (
+                      <span style={{ color: '#c9d1d9', fontSize: '13px' }}>
+                        {renderMessageContent(msg.content)}
+                        {msg.edited && <span style={{ color: '#8b949e', fontSize: '10px', marginLeft: '6px' }}>(editado)</span>}
+                      </span>
+                    )}
+                  </div>
+
+                  {isMyMessage && !isEditingThis && (
+                    <button 
+                      onClick={() => { setEditingMessageId(messageKey); setEditingText(msg.content); }}
+                      style={{ background: 'transparent', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: '11px', textDecoration: 'underline', marginLeft: '8px', flexShrink: 0 }}
+                    >
+                      Editar
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })
