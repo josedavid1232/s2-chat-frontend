@@ -55,9 +55,10 @@ function App() {
   const [userCount, setUserCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
    
-  // Estado para la edición de mensajes
+  // Estado para la edición de mensajes y menú de 3 puntos
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editingText, setEditingText] = useState('');
+  const [activeMenuId, setActiveMenuId] = useState(null);
 
   const stompClientRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -182,6 +183,7 @@ function App() {
        
       setEditingMessageId(null);
       setEditingText('');
+      setActiveMenuId(null);
     }
   };
 
@@ -250,6 +252,7 @@ function App() {
             const isMyMessage = msg.sender === username;
             const messageKey = msg.id !== undefined ? msg.id : index;
             const isEditingThis = editingMessageId === messageKey;
+            const isMenuOpen = activeMenuId === messageKey;
 
             return (
               <div 
@@ -261,9 +264,9 @@ function App() {
                   {msg.sender ? msg.sender.charAt(0).toUpperCase() : '?'}
                 </div>
 
-                {/* Burbuja de mensaje adaptada al texto */}
+                {/* Burbuja de mensaje */}
                 <div className="message-bubble">
-                  <div style={{ wordBreak: 'break-word', paddingRight: isMyMessage && !isEditingThis ? '60px' : '0' }}>
+                  <div style={{ wordBreak: 'break-word', paddingRight: isMyMessage && !isEditingThis ? '35px' : '0' }}>
                     <span style={{ color: getUserColor(msg.sender), fontWeight: 'bold', marginRight: '6px', fontSize: '13px' }}>
                       {msg.sender}:
                     </span>
@@ -297,15 +300,32 @@ function App() {
                     )}
                   </div>
 
-                  {/* Botón de editar flotante y discreto (estilo Discord) */}
+                  {/* Menú flotante de 3 puntos (⋮) estilo WhatsApp/Discord */}
                   {isMyMessage && !isEditingThis && (
-                    <button 
-                      onClick={() => { setEditingMessageId(messageKey); setEditingText(msg.content); }}
-                      className="edit-btn-float"
-                      title="Editar mensaje"
-                    >
-                      ✏️ Editar
-                    </button>
+                    <div className="message-actions-container">
+                      <button 
+                        onClick={() => setActiveMenuId(isMenuOpen ? null : messageKey)}
+                        className="menu-trigger-btn"
+                        title="Opciones"
+                      >
+                        ⋮
+                      </button>
+
+                      {isMenuOpen && (
+                        <div className="dropdown-menu">
+                          <button 
+                            className="dropdown-item"
+                            onClick={() => {
+                              setEditingMessageId(messageKey);
+                              setEditingText(msg.content);
+                              setActiveMenuId(null);
+                            }}
+                          >
+                            ✏️ Editar
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -315,7 +335,7 @@ function App() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Formulario de envío rediseñado */}
+      {/* Formulario de envío */}
       <form onSubmit={sendMessage} className="chat-input-form">
         <input
           type="text"
