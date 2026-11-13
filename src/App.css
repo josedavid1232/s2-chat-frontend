@@ -3,27 +3,22 @@
    ============================================================ */
 
 :root {
-  --bg-dark: #090d16;
-  --panel-bg: #0d1117;
-  --card-bg: #161b22;
-  --card-hover: #1c2128;
+  --bg-dark: #0d1117;
+  --panel-bg: #161b22;
+  --card-bg: #1f242d;
   --border-color: #30363d;
-  --border-accent: #21262d;
   --primary-blue: #1f6feb;
-  --primary-blue-hover: #388bfd;
-  --green-online: #238636;
-  --green-text: #3fb950;
   --text-primary: #c9d1d9;
   --text-muted: #8b949e;
 }
 
-/* Contenedor Principal del Chat (Panel Flotante Estilizado) */
+/* Contenedor Principal del Chat con un tono azulado y elegante */
 .chat-container {
-  background: linear-gradient(145deg, #0d1117 0%, #090d16 100%);
+  background: linear-gradient(145deg, #161f30 0%, #0b101b 100%);
   border: 1px solid #30363d;
   border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(31, 111, 235, 0.12);
-  padding: 20px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(31, 111, 235, 0.15);
+  padding: 22px;
   max-width: 100%;
   box-sizing: border-box;
   color: #ffffff;
@@ -51,13 +46,13 @@
   letter-spacing: 0.5px;
 }
 
-/* Estado de conexión limpio estilo píldora */
+/* Estado de conexión estilo píldora */
 .status-pill {
   font-size: 12px;
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--card-bg);
+  background: #111722;
   padding: 5px 12px;
   border-radius: 20px;
   border: 1px solid var(--border-color);
@@ -70,7 +65,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 14px;
-  background: rgba(22, 27, 34, 0.7);
+  background: rgba(17, 23, 34, 0.8);
   backdrop-filter: blur(8px);
   padding: 10px 14px;
   border-radius: 10px;
@@ -78,21 +73,21 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-/* Caja Principal de Mensajes con Textura Avanzada tipo Discord */
+/* Caja Principal de Mensajes con un fondo azul marino texturizado para que resalte */
 .chat-box {
   height: 420px;
-  border: 1px solid var(--border-accent) !important;
+  border: 1px solid #30363d !important;
   border-radius: 12px !important;
   overflow-y: auto;
   padding: 16px;
-  background: radial-gradient(circle at 50% 50%, #0e1626 0%, #060911 100%) !important;
-  background-image: radial-gradient(rgba(88, 166, 255, 0.1) 1.5px, transparent 1.5px);
+  background: radial-gradient(circle at 50% 50%, #111a2e 0%, #080d17 100%) !important;
+  background-image: radial-gradient(rgba(88, 166, 255, 0.08) 1.5px, transparent 1.5px);
   background-size: 24px 24px;
   margin-bottom: 14px;
   display: flex;
   flex-direction: column;
   text-align: left !important;
-  box-shadow: inset 0 4px 16px rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 4px 20px rgba(0, 0, 0, 0.7);
 }
 
 /* Personalización del Scrollbar */
@@ -100,7 +95,7 @@
   width: 6px;
 }
 .chat-box::-webkit-scrollbar-track {
-  background: #060911;
+  background: #080d17;
 }
 .chat-box::-webkit-scrollbar-thumb {
   background: #30363d;
@@ -114,7 +109,7 @@
 .chat-input-form {
   display: flex;
   gap: 10px;
-  background: rgba(13, 17, 23, 0.8);
+  background: rgba(17, 23, 34, 0.9);
   padding: 8px;
   border-radius: 12px;
   border: 1px solid var(--border-color);
@@ -125,7 +120,7 @@
 .chat-input-form input[type="text"] {
   flex: 1;
   padding: 10px 14px;
-  background: #060911;
+  background: #080d17;
   color: white;
   border: 1px solid #30363d;
   border-radius: 8px;
@@ -237,7 +232,7 @@ button:hover {
   user-select: none;
 }
 
-/* Botón de 3 puntos flotante (Estilo WhatsApp / Discord integrado) */
+/* Botón de 3 puntos flotante */
 .message-actions-container {
   position: absolute;
   top: 6px;
