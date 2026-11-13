@@ -91,7 +91,6 @@ function App() {
         client.subscribe('/topic/public', (message) => {
           const receivedMessage = JSON.parse(message.body);
           setMessages((prevMessages) => {
-            // Si el mensaje recibido es una actualización/edición de uno existente
             const existsIndex = prevMessages.findIndex(m => m.id !== undefined && m.id === receivedMessage.id);
             if (existsIndex !== -1) {
               const updated = [...prevMessages];
@@ -235,7 +234,7 @@ function App() {
         )}
       </div>
 
-      {/* Caja de mensajes con burbujas y avatares */}
+      {/* Caja de mensajes */}
       <div className="chat-box">
         {isLoading ? (
           <div style={{ color: '#8b949e', textAlign: 'center', margin: 'auto' }}>
@@ -255,16 +254,15 @@ function App() {
               <div 
                 key={messageKey} 
                 className={`chat-message ${isMyMessage ? 'mine' : ''}`}
-                style={{ display: 'flex', alignItems: 'flex-end', marginBottom: '12px', gap: '10px', width: '100%', flexDirection: isMyMessage ? 'row-reverse' : 'row' }}
               >
                 {/* Avatar circular con la inicial */}
                 <div className="user-avatar" style={{ backgroundColor: getUserColor(msg.sender) }}>
                   {msg.sender ? msg.sender.charAt(0).toUpperCase() : '?'}
                 </div>
 
-                {/* Burbuja de mensaje */}
-                <div className="message-bubble" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
-                  <div style={{ flex: 1, wordBreak: 'break-word' }}>
+                {/* Burbuja de mensaje adaptada al texto */}
+                <div className="message-bubble">
+                  <div style={{ wordBreak: 'break-word' }}>
                     <span style={{ color: getUserColor(msg.sender), fontWeight: 'bold', marginRight: '6px', fontSize: '13px' }}>
                       {msg.sender}:
                     </span>
@@ -299,12 +297,14 @@ function App() {
                   </div>
 
                   {isMyMessage && !isEditingThis && (
-                    <button 
-                      onClick={() => { setEditingMessageId(messageKey); setEditingText(msg.content); }}
-                      style={{ background: 'transparent', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: '11px', textDecoration: 'underline', marginLeft: '8px', flexShrink: 0 }}
-                    >
-                      Editar
-                    </button>
+                    <div style={{ textAlign: 'right', marginTop: '4px' }}>
+                      <button 
+                        onClick={() => { setEditingMessageId(messageKey); setEditingText(msg.content); }}
+                        style={{ background: 'transparent', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: '11px', textDecoration: 'underline' }}
+                      >
+                        Editar
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
