@@ -324,7 +324,7 @@ function App() {
           placeholder="Escribe un mensaje o comparte una URL..."
         />
         <button type="submit" className="chat-send-btn">
-          Enviar 🚀
+          Enviar 
         </button>
       </form>
     </div>
