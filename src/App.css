@@ -197,7 +197,7 @@ button:hover {
 }
 
 .message-bubble {
-  position: relative; /* Clave para el posicionamiento absoluto del botón */
+  position: relative;
   max-width: 75%;
   padding: 10px 14px;
   border-radius: 14px;
@@ -237,30 +237,64 @@ button:hover {
   user-select: none;
 }
 
-/* Botón de editar flotante y discreto (Estilo Discord) */
-.edit-btn-float {
+/* Botón de 3 puntos flotante (Estilo WhatsApp / Discord) */
+.message-actions-container {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  right: 10px;
-  background: rgba(13, 17, 23, 0.9);
-  border: 1px solid #30363d;
-  color: #8b949e;
-  cursor: pointer;
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 6px;
+  top: 6px;
+  right: 8px;
   opacity: 0;
-  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  transition: opacity 0.15s ease;
 }
 
-/* Hace visible el botón únicamente al pasar el cursor sobre la burbuja */
-.message-bubble:hover .edit-btn-float {
+.message-bubble:hover .message-actions-container {
   opacity: 1;
 }
 
-.edit-btn-float:hover {
+.menu-trigger-btn {
+  background: rgba(13, 17, 23, 0.85);
+  border: 1px solid #30363d;
+  color: #8b949e;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.menu-trigger-btn:hover {
   background: #21262d;
-  color: #58a6ff;
+  color: #ffffff;
   border-color: #58a6ff;
+}
+
+/* Menú desplegable flotante */
+.dropdown-menu {
+  position: absolute;
+  top: 24px;
+  right: 0;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  min-width: 90px;
+  overflow: hidden;
+}
+
+.dropdown-item {
+  background: transparent;
+  border: none;
+  color: #c9d1d9;
+  padding: 6px 12px;
+  text-align: left;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dropdown-item:hover {
+  background: #1f6feb;
+  color: #ffffff;
 }
