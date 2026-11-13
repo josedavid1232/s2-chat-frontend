@@ -202,33 +202,34 @@ function App() {
         </div>
       </div>
        
-      <div style={{ marginBottom: '12px', background: '#161b22', padding: '10px 12px', borderRadius: '6px', border: '1px solid #30363d' }}>
+      {/* Barra de perfil / Apodo rediseñada */}
+      <div className="user-profile-bar">
         {!isEditingUsername ? (
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
-            <span>Tu apodo: <strong style={{ color: getUserColor(username) }}>{username}</strong></span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', fontSize: '13px' }}>
+            <span>Tu apodo activo: <strong style={{ color: getUserColor(username) }}>{username}</strong></span>
             <button 
               onClick={() => { setTempUsername(username); setIsEditingUsername(true); }} 
-              style={{ padding: '3px 8px', cursor: 'pointer', background: '#238636', color: 'white', border: 'none', borderRadius: '4px', fontSize: '12px' }}
+              style={{ padding: '4px 10px', cursor: 'pointer', background: '#238636', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px' }}
             >
-              Cambiar
+              Cambiar apodo
             </button>
           </div>
         ) : (
-          <form onSubmit={handleUsernameSubmit} style={{ display: 'flex', gap: '6px' }}>
+          <form onSubmit={handleUsernameSubmit} style={{ display: 'flex', gap: '8px', width: '100%' }}>
             <input
               type="text"
               value={tempUsername}
               onChange={(e) => setTempUsername(e.target.value)}
-              placeholder="Nuevo apodo..."
-              style={{ flex: 1, padding: '5px 8px', background: '#0d1117', color: 'white', border: '1px solid #30363d', borderRadius: '4px', fontSize: '13px' }}
+              placeholder="Escribe tu nuevo apodo..."
+              style={{ flex: 1, padding: '6px 10px', background: '#060911', color: 'white', border: '1px solid #30363d', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
             />
-            <button type="submit" style={{ padding: '5px 10px', cursor: 'pointer', background: '#238636', color: 'white', border: 'none', borderRadius: '4px', fontSize: '12px' }}>Guardar</button>
+            <button type="submit" style={{ padding: '6px 12px', cursor: 'pointer', background: '#238636', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px' }}>Guardar</button>
             <button 
               type="button" 
               onClick={() => setIsEditingUsername(false)}
-              style={{ padding: '5px 10px', cursor: 'pointer', background: '#da3633', color: 'white', border: 'none', borderRadius: '4px', fontSize: '12px' }}
+              style={{ padding: '6px 12px', cursor: 'pointer', background: '#da3633', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px' }}
             >
-              X
+              Cancelar
             </button>
           </form>
         )}
@@ -314,16 +315,16 @@ function App() {
         <div ref={messagesEndRef} />
       </div>
 
-      <form onSubmit={sendMessage} style={{ display: 'flex', gap: '8px' }}>
+      {/* Formulario de envío rediseñado */}
+      <form onSubmit={sendMessage} className="chat-input-form">
         <input
           type="text"
           value={messageInput}
           onChange={(e) => setMessageInput(e.target.value)}
-          placeholder="Escribe un mensaje o URL..."
-          style={{ flex: 1, padding: '8px 10px', background: '#0d1117', color: 'white', border: '1px solid #30363d', borderRadius: '6px', fontSize: '13px' }}
+          placeholder="Escribe un mensaje o comparte una URL..."
         />
-        <button type="submit" style={{ padding: '8px 16px', background: '#1f6feb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>
-          Enviar
+        <button type="submit" className="chat-send-btn">
+          Enviar 🚀
         </button>
       </form>
     </div>
