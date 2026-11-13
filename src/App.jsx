@@ -262,8 +262,8 @@ function App() {
                 </div>
 
                 {/* Burbuja de mensaje adaptada al texto */}
-                <div className="message-bubble">
-                  <div style={{ wordBreak: 'break-word' }}>
+                <div className="message-bubble" style={{ position: 'relative' }}>
+                  <div style={{ wordBreak: 'break-word', paddingRight: isMyMessage ? '45px' : '0' }}>
                     <span style={{ color: getUserColor(msg.sender), fontWeight: 'bold', marginRight: '6px', fontSize: '13px' }}>
                       {msg.sender}:
                     </span>
@@ -297,15 +297,26 @@ function App() {
                     )}
                   </div>
 
+                  {/* Botón de editar flotante y discreto (estilo Discord) */}
                   {isMyMessage && !isEditingThis && (
-                    <div style={{ textAlign: 'right', marginTop: '4px' }}>
-                      <button 
-                        onClick={() => { setEditingMessageId(messageKey); setEditingText(msg.content); }}
-                        style={{ background: 'transparent', border: 'none', color: '#8b949e', cursor: 'pointer', fontSize: '11px', textDecoration: 'underline' }}
-                      >
-                        Editar
-                      </button>
-                    </div>
+                    <button 
+                      onClick={() => { setEditingMessageId(messageKey); setEditingText(msg.content); }}
+                      title="Editar mensaje"
+                      style={{
+                        position: 'absolute',
+                        top: '6px',
+                        right: '8px',
+                        background: 'rgba(22, 27, 34, 0.9)',
+                        border: '1px solid #30363d',
+                        color: '#8b949e',
+                        cursor: 'pointer',
+                        fontSize: '10px',
+                        padding: '2px 6px',
+                        borderRadius: '4px'
+                      }}
+                    >
+                      ✏️
+                    </button>
                   )}
                 </div>
               </div>
@@ -324,7 +335,7 @@ function App() {
           placeholder="Escribe un mensaje o comparte una URL..."
         />
         <button type="submit" className="chat-send-btn">
-          Enviar 
+          Enviar
         </button>
       </form>
     </div>
