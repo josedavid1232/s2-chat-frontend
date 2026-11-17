@@ -95,7 +95,7 @@ function App() {
           setMessages((prevMessages) => {
             // Manejo de mensaje eliminado por tipo de evento o ID
             if (receivedMessage.type === 'DELETE') {
-              return prevMessages.filter(m => (m.id !== undefined && m.id !== receivedMessage.id));
+              return prevMessages.filter(m => m.id !== undefined && m.id !== receivedMessage.id);
             }
 
             const existsIndex = prevMessages.findIndex(m => m.id !== undefined && m.id === receivedMessage.id);
@@ -162,7 +162,7 @@ function App() {
     }
   };
 
-  // Guardar edición de mensaje de forma robusta
+  // Guardar edición de mensaje
   const saveEditedMessage = (msgId, index) => {
     if (!editingText.trim()) return;
 
@@ -193,7 +193,7 @@ function App() {
     }
   };
 
-  // Eliminar mensaje
+  // Eliminar mensaje de forma persistente y sincronizada
   const deleteMessage = (msgId, index) => {
     const targetMessage = messages.find(m => m.id === msgId || messages.indexOf(m) === index);
     const identifier = targetMessage ? (targetMessage.id !== undefined ? targetMessage.id : index) : msgId;
@@ -205,15 +205,13 @@ function App() {
         type: 'DELETE'
       };
 
-      // Si tu backend soporta una ruta específica de eliminación, puedes cambiar el destination. 
-      // Por compatibilidad general de STOMP, enviamos el payload de eliminación:
       stompClientRef.current.publish({
         destination: '/app/chat.deleteMessage',
         body: JSON.stringify(deletePayload),
       });
 
-      // Actualización local inmediata
-      setMessages(prev => prev.filter((m, idx) => m.id !== identifier && idx !== index));
+      // Actualización local usando estrictamente el ID persistente para evitar que reviva
+      setMessages(prev => prev.filter(m => m.id !== identifier));
       setActiveMenuId(null);
     }
   };
