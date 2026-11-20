@@ -1161,7 +1161,15 @@ function App() {
                       <span style={{ color: '#e6edf3', fontSize: '13px', fontWeight: 400, lineHeight: 1.45 }}>
                         {renderMessageContent(msg.content)}
                         {msg.edited && (
-                          <span style={{ color: '#8b949e', fontSize: '10.5px', marginLeft: '6px', fontWeight: 400 }}>
+                          <span
+                            style={{
+                              color: '#9fb0c7',
+                              fontSize: '10.5px',
+                              marginLeft: '6px',
+                              fontWeight: 500,
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
                             (editado)
                           </span>
                         )}
