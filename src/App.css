@@ -18,6 +18,7 @@
 
 /* Contenedor Principal del Chat con un tono azulado y elegante */
 .chat-container {
+  position: relative;
   background: linear-gradient(145deg, #161f30 0%, #0b101b 100%);
   border: 1px solid #30363d;
   border-radius: 16px;
@@ -41,6 +42,8 @@
 
 /* Cabecera unificada y moderna */
 .chat-header-bar {
+  position: relative;
+  z-index: 2;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -76,13 +79,15 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-/* Barra de Perfil / Apodo Rediseñada */
+/* Barra de Perfil / Apodo Rediseñada (capa superior para el Color Picker) */
 .user-profile-bar {
+  position: relative;
+  z-index: 60;
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 14px;
-  background: rgba(17, 23, 34, 0.8);
+  background: rgba(17, 23, 34, 0.92);
   backdrop-filter: blur(8px);
   padding: 10px 14px;
   border-radius: 10px;
@@ -94,6 +99,9 @@
 
 /* Caja Principal de Mensajes con un fondo azul marino texturizado */
 .chat-box {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
   height: 420px;
   border: 1px solid #30363d !important;
   border-radius: 12px !important;
@@ -127,6 +135,7 @@
 /* Contenedor del Input de Envío Rediseñado */
 .chat-input-form {
   position: relative;
+  z-index: 20;
   display: flex;
   gap: 10px;
   background: rgba(17, 23, 34, 0.9);
@@ -139,6 +148,7 @@
 /* Input de Texto principal */
 .chat-input-form input[type="text"] {
   flex: 1;
+  min-width: 0;
   padding: 10px 14px;
   background: #080d17;
   color: #e6edf3;
@@ -172,6 +182,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   transition: all 0.2s ease;
 }
 
@@ -222,6 +233,7 @@
   font-weight: 600;
   font-size: 13.5px;
   letter-spacing: -0.01em;
+  flex-shrink: 0;
   transition: all 0.2s ease;
   box-shadow: 0 2px 6px rgba(31, 111, 235, 0.3);
 }
@@ -253,6 +265,8 @@ button:hover {
    ============================================================ */
 
 .chat-message {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: flex-end;
   margin-bottom: 14px;
@@ -287,6 +301,7 @@ button:hover {
 
 .message-bubble {
   position: relative;
+  z-index: 1;
   max-width: 100%;
   padding: 10px 14px;
   border-radius: 14px;
@@ -458,4 +473,55 @@ button:hover {
 .dropdown-item.delete:hover {
   background: #da3633;
   color: #ffffff;
+}
+
+/* ============================================================
+   ADAPTACIÓN MÓVIL (TELÉFONOS)
+   ============================================================ */
+@media (max-width: 600px) {
+  .chat-container {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .chat-header-bar {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .user-profile-bar {
+    padding: 9px 10px;
+  }
+
+  .chat-box {
+    height: 360px;
+    padding: 12px;
+  }
+
+  .message-column {
+    max-width: 82%;
+  }
+
+  .chat-input-form {
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .chat-input-form input[type="text"] {
+    padding: 9px 10px;
+    font-size: 13px;
+  }
+
+  .chat-send-btn {
+    padding: 9px 13px;
+    font-size: 13px;
+  }
+
+  .emoji-picker-popover {
+    right: 6px;
+    left: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+    z-index: 150;
+  }
 }
