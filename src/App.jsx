@@ -3,6 +3,9 @@ import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import './App.css';
 
+const MODERN_FONT = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+const DISPLAY_FONT = "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
 // Función para generar un color consistente basado en el apodo (respaldo si no hay color elegido)
 const getUserColor = (name) => {
   if (!name) return '#ff5555';
@@ -48,7 +51,12 @@ const renderMessageContent = (content) => {
           href={part}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: '#58a6ff', textDecoration: 'underline', wordBreak: 'break-all' }}
+          style={{
+            color: '#58a6ff',
+            textDecoration: 'underline',
+            wordBreak: 'break-all',
+            fontFamily: MODERN_FONT,
+          }}
         >
           {part}
         </a>
@@ -58,7 +66,7 @@ const renderMessageContent = (content) => {
   });
 };
 
-// Panel flotante oscuro con la temática del chat
+// Panel flotante oscuro con la temática del chat y tipografía moderna
 function CustomColorPickerCard({ color, onChangeColor, onClose }) {
   const initialRgb = hexToRgb(color);
   const [hexInput, setHexInput] = useState((color || '#5823CD').toUpperCase());
@@ -188,6 +196,7 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
         width: '252px',
         backgroundColor: '#0d1117',
         color: '#e6edf3',
+        fontFamily: MODERN_FONT,
         borderRadius: '16px',
         padding: '16px',
         boxShadow: '0 20px 44px rgba(0, 0, 0, 0.65)',
@@ -196,7 +205,15 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <span style={{ fontSize: '16px', fontWeight: 600, letterSpacing: '-0.01em', color: '#e6edf3' }}>
+        <span
+          style={{
+            fontFamily: DISPLAY_FONT,
+            fontSize: '15px',
+            fontWeight: 700,
+            letterSpacing: '-0.02em',
+            color: '#e6edf3',
+          }}
+        >
           Elige un color
         </span>
         <button
@@ -211,7 +228,8 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
             height: '24px',
             cursor: 'pointer',
             fontSize: '12px',
-            fontWeight: 'bold',
+            fontWeight: 600,
+            fontFamily: MODERN_FONT,
           }}
           title="Cerrar"
         >
@@ -340,6 +358,7 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
           borderTop: '1px solid #30363d',
           paddingTop: '10px',
           textAlign: 'center',
+          fontVariantNumeric: 'tabular-nums',
         }}
       >
         <div>
@@ -358,6 +377,7 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
               padding: '5px 4px',
               fontSize: '11px',
               fontWeight: 600,
+              fontFamily: MODERN_FONT,
               textAlign: 'center',
               outline: 'none',
             }}
@@ -382,11 +402,13 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
                 borderRadius: '6px',
                 padding: '5px 2px',
                 fontSize: '11px',
+                fontWeight: 500,
+                fontFamily: MODERN_FONT,
                 textAlign: 'center',
                 outline: 'none',
               }}
             />
-            <div style={{ fontSize: '11px', color: '#8b949e', marginTop: '4px' }}>
+            <div style={{ fontSize: '11px', color: '#8b949e', marginTop: '4px', fontWeight: 500 }}>
               {ch.toUpperCase()}
             </div>
           </div>
@@ -782,12 +804,14 @@ function App() {
   };
 
   return (
-    <div className="chat-container">
+    <div className="chat-container" style={{ fontFamily: MODERN_FONT }}>
       {/* Cabecera unificada y moderna */}
       <div className="chat-header-bar">
-        <h2>Chat Global</h2>
+        <h2 style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, letterSpacing: '-0.025em' }}>
+          Chat Global
+        </h2>
 
-        <div className="status-pill">
+        <div className="status-pill" style={{ fontFamily: MODERN_FONT, fontVariantNumeric: 'tabular-nums' }}>
           <span
             style={{
               height: '8px',
@@ -798,7 +822,7 @@ function App() {
               boxShadow: '0 0 8px #238636',
             }}
           ></span>
-          <span style={{ color: '#3fb950', fontWeight: 'bold' }}>
+          <span style={{ color: '#3fb950', fontWeight: 600 }}>
             {userCount} {userCount === 1 ? 'conectado' : 'conectados'}
           </span>
           <span
@@ -807,6 +831,7 @@ function App() {
               borderLeft: '1px solid #30363d',
               paddingLeft: '8px',
               fontSize: '11px',
+              fontWeight: 500,
             }}
           >
             🧹 30 min
@@ -817,7 +842,13 @@ function App() {
       {/* Barra de perfil / Apodo bloqueado + Botón Color Picker */}
       <div
         className="user-profile-bar"
-        style={{ position: 'relative', flexDirection: 'column', alignItems: 'stretch', gap: '6px' }}
+        style={{
+          position: 'relative',
+          flexDirection: 'column',
+          alignItems: 'stretch',
+          gap: '6px',
+          fontFamily: MODERN_FONT,
+        }}
       >
         {!isEditingUsername ? (
           <div
@@ -832,9 +863,9 @@ function App() {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>
+              <span style={{ fontWeight: 400, color: '#e6edf3' }}>
                 Tu apodo bloqueado:{' '}
-                <strong style={{ color: userColor }}>
+                <strong style={{ color: userColor, fontWeight: 600 }}>
                   {username || 'Asignando...'}
                 </strong>
               </span>
@@ -847,13 +878,15 @@ function App() {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
-                  padding: '4px 9px',
+                  padding: '4px 10px',
                   cursor: 'pointer',
                   background: '#161b22',
                   color: '#e6edf3',
                   border: '1px solid #30363d',
                   borderRadius: '6px',
                   fontSize: '12px',
+                  fontWeight: 500,
+                  fontFamily: MODERN_FONT,
                 }}
               >
                 <span
@@ -882,13 +915,15 @@ function App() {
                   setIsEditingUsername(true);
                 }}
                 style={{
-                  padding: '4px 10px',
+                  padding: '4px 11px',
                   cursor: 'pointer',
                   background: '#238636',
                   color: 'white',
                   border: 'none',
                   borderRadius: '6px',
                   fontSize: '12px',
+                  fontWeight: 500,
+                  fontFamily: MODERN_FONT,
                 }}
               >
                 Cambiar apodo
@@ -898,13 +933,15 @@ function App() {
                 disabled={isUsernameLoading || !username}
                 onClick={handleReleaseUsername}
                 style={{
-                  padding: '4px 10px',
+                  padding: '4px 11px',
                   cursor: 'pointer',
                   background: '#da3633',
                   color: 'white',
                   border: 'none',
                   borderRadius: '6px',
                   fontSize: '12px',
+                  fontWeight: 500,
+                  fontFamily: MODERN_FONT,
                 }}
               >
                 Quitar apodo
@@ -927,6 +964,7 @@ function App() {
                 border: '1px solid #30363d',
                 borderRadius: '6px',
                 fontSize: '13px',
+                fontFamily: MODERN_FONT,
                 outline: 'none',
               }}
             />
@@ -944,6 +982,8 @@ function App() {
                 border: '1px solid #30363d',
                 borderRadius: '6px',
                 fontSize: '12px',
+                fontWeight: 500,
+                fontFamily: MODERN_FONT,
               }}
             >
               <span
@@ -968,6 +1008,8 @@ function App() {
                 border: 'none',
                 borderRadius: '6px',
                 fontSize: '12px',
+                fontWeight: 500,
+                fontFamily: MODERN_FONT,
               }}
             >
               {isUsernameLoading ? '...' : 'Bloquear'}
@@ -989,6 +1031,8 @@ function App() {
                   border: 'none',
                   borderRadius: '6px',
                   fontSize: '12px',
+                  fontWeight: 500,
+                  fontFamily: MODERN_FONT,
                 }}
               >
                 Cancelar
@@ -1012,14 +1056,14 @@ function App() {
         )}
 
         {usernameError && (
-          <div style={{ color: '#f85149', fontSize: '12px' }}>
+          <div style={{ color: '#f85149', fontSize: '12px', fontWeight: 500 }}>
             ⚠️ {usernameError}
           </div>
         )}
       </div>
 
       {/* Caja de mensajes */}
-      <div className="chat-box">
+      <div className="chat-box" style={{ fontFamily: MODERN_FONT }}>
         {isLoading ? (
           <div style={{ color: '#8b949e', textAlign: 'center', margin: 'auto' }}>
             <p>⏳ Conectando al servidor...</p>
@@ -1038,11 +1082,14 @@ function App() {
 
             return (
               <div key={messageKey} className={`chat-message ${isMyMessage ? 'mine' : ''}`}>
-                <div className="user-avatar" style={{ backgroundColor: senderColor }}>
+                <div
+                  className="user-avatar"
+                  style={{ backgroundColor: senderColor, fontFamily: DISPLAY_FONT, fontWeight: 700 }}
+                >
                   {msg.sender ? msg.sender.charAt(0).toUpperCase() : '?'}
                 </div>
 
-                <div className="message-bubble">
+                <div className="message-bubble" style={{ fontFamily: MODERN_FONT }}>
                   <div
                     style={{
                       wordBreak: 'break-word',
@@ -1052,9 +1099,10 @@ function App() {
                     <span
                       style={{
                         color: senderColor,
-                        fontWeight: 'bold',
+                        fontWeight: 600,
                         marginRight: '6px',
                         fontSize: '13px',
+                        letterSpacing: '-0.01em',
                       }}
                     >
                       {msg.sender}:
@@ -1073,6 +1121,7 @@ function App() {
                             border: '1px solid #30363d',
                             borderRadius: '4px',
                             fontSize: '13px',
+                            fontFamily: MODERN_FONT,
                           }}
                         />
                         <button
@@ -1085,6 +1134,8 @@ function App() {
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontSize: '12px',
+                            fontWeight: 500,
+                            fontFamily: MODERN_FONT,
                           }}
                         >
                           OK
@@ -1099,16 +1150,18 @@ function App() {
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontSize: '12px',
+                            fontWeight: 500,
+                            fontFamily: MODERN_FONT,
                           }}
                         >
                           X
                         </button>
                       </div>
                     ) : (
-                      <span style={{ color: '#c9d1d9', fontSize: '13px' }}>
+                      <span style={{ color: '#e6edf3', fontSize: '13px', fontWeight: 400, lineHeight: 1.45 }}>
                         {renderMessageContent(msg.content)}
                         {msg.edited && (
-                          <span style={{ color: '#8b949e', fontSize: '10px', marginLeft: '6px' }}>
+                          <span style={{ color: '#8b949e', fontSize: '10.5px', marginLeft: '6px', fontWeight: 400 }}>
                             (editado)
                           </span>
                         )}
@@ -1127,7 +1180,7 @@ function App() {
                       </button>
 
                       {isMenuOpen && (
-                        <div className="dropdown-menu">
+                        <div className="dropdown-menu" style={{ fontFamily: MODERN_FONT }}>
                           <button
                             className="dropdown-item"
                             onClick={() => {
@@ -1157,15 +1210,16 @@ function App() {
       </div>
 
       {/* Formulario de envío */}
-      <form onSubmit={sendMessage} className="chat-input-form">
+      <form onSubmit={sendMessage} className="chat-input-form" style={{ fontFamily: MODERN_FONT }}>
         <input
           type="text"
           value={messageInput}
           onChange={(e) => setMessageInput(e.target.value)}
           placeholder="Escribe un mensaje o comparte una URL..."
           disabled={!username}
+          style={{ fontFamily: MODERN_FONT }}
         />
-        <button type="submit" className="chat-send-btn" disabled={!username}>
+        <button type="submit" className="chat-send-btn" disabled={!username} style={{ fontFamily: MODERN_FONT, fontWeight: 600 }}>
           Enviar
         </button>
       </form>
