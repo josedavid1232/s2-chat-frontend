@@ -235,9 +235,9 @@ button:hover {
 }
 
 .chat-message.mine .message-bubble {
-  background: linear-gradient(135deg, #0b6623 0%, #005c4b 100%);
-  color: #ffffff;
-  border: 1px solid #238636;
+  background: linear-gradient(135deg, #172236 0%, #101827 100%);
+  color: #e6edf3;
+  border: 1px solid rgba(56, 139, 253, 0.35);
   border-top-right-radius: 3px;
 }
 
