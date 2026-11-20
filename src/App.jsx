@@ -5,6 +5,8 @@ import './App.css';
 
 const MODERN_FONT = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 const DISPLAY_FONT = "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+const QUICK_EMOJIS = ['😊', '😂', '🔥', '👍', '❤️', '🎮', '🚀', 'GG'];
+const REACTION_EMOJIS = ['👍', '❤️', '😂'];
 
 // Función para generar un color consistente basado en el apodo (respaldo si no hay color elegido)
 const getUserColor = (name) => {
@@ -66,8 +68,8 @@ const renderMessageContent = (content) => {
   });
 };
 
-// Panel flotante oscuro con la temática del chat y tipografía moderna
-function CustomColorPickerCard({ color, onChangeColor, onClose }) {
+// Panel flotante oscuro con vista previa en vivo tipo burbuja
+function CustomColorPickerCard({ color, previewName, onChangeColor, onClose }) {
   const initialRgb = hexToRgb(color);
   const [hexInput, setHexInput] = useState((color || '#5823CD').toUpperCase());
   const [rgb, setRgb] = useState(initialRgb);
@@ -185,15 +187,17 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
   const ringRad = ((hue - 90) * Math.PI) / 180;
   const ringKnobX = 88 + Math.cos(ringRad) * 72;
   const ringKnobY = 88 + Math.sin(ringRad) * 72;
+  const displayPreviewName = (previewName || 'TuApodo').trim() || 'TuApodo';
 
   return (
     <div
+      data-popover="color-picker"
       style={{
         position: 'absolute',
         top: '100%',
         left: '0',
         marginTop: '8px',
-        width: '252px',
+        width: '256px',
         backgroundColor: '#0d1117',
         color: '#e6edf3',
         fontFamily: MODERN_FONT,
@@ -204,7 +208,7 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
         zIndex: 120,
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
         <span
           style={{
             fontFamily: DISPLAY_FONT,
@@ -235,6 +239,46 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
         >
           ✕
         </button>
+      </div>
+
+      {/* Vista previa en vivo tipo burbuja */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: 'linear-gradient(135deg, #172236 0%, #101827 100%)',
+          border: '1px solid rgba(56, 139, 253, 0.35)',
+          borderRadius: '12px',
+          padding: '8px 10px',
+          marginBottom: '12px',
+        }}
+      >
+        <span
+          style={{
+            width: '24px',
+            height: '24px',
+            minWidth: '24px',
+            borderRadius: '50%',
+            backgroundColor: color,
+            color: '#ffffff',
+            fontFamily: DISPLAY_FONT,
+            fontWeight: 700,
+            fontSize: '11px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '1px solid rgba(255,255,255,0.2)',
+          }}
+        >
+          {displayPreviewName.charAt(0).toUpperCase()}
+        </span>
+        <div style={{ fontSize: '12.5px', lineHeight: 1.35, wordBreak: 'break-word' }}>
+          <strong style={{ color, fontWeight: 600, marginRight: '5px' }}>
+            {displayPreviewName}:
+          </strong>
+          <span style={{ color: '#e6edf3' }}>Hola</span>
+        </div>
       </div>
 
       {/* Rueda cromática + círculo interior */}
@@ -418,11 +462,33 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
   );
 }
 
+// Aplica o alternar reacción { "👍": ["user1", ...] } en memoria
+const applyReactionUpdate = (msg, emoji, reactorName) => {
+  if (!emoji || !reactorName) return msg;
+  const cleanReactor = reactorName.trim();
+  const currentMap = { ...(msg.reactions || {}) };
+  const users = Array.isArray(currentMap[emoji]) ? [...currentMap[emoji]] : [];
+
+  const exists = users.some((u) => u.toLowerCase() === cleanReactor.toLowerCase());
+  const nextUsers = exists
+    ? users.filter((u) => u.toLowerCase() !== cleanReactor.toLowerCase())
+    : [...users, cleanReactor];
+
+  if (nextUsers.length === 0) {
+    delete currentMap[emoji];
+  } else {
+    currentMap[emoji] = nextUsers;
+  }
+
+  return { ...msg, reactions: currentMap };
+};
+
 function App() {
   const backendUrl = import.meta.env.VITE_API_URL || 'https://s2-chat-backend.onrender.com';
 
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
 
   // Apodo bloqueado guardado en localStorage (persiste al recargar con F5)
   const [username, setUsername] = useState(() => {
@@ -457,6 +523,38 @@ function App() {
 
   const stompClientRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const editInputRef = useRef(null);
+
+  // Cerrar popovers (Color Picker, menú ⋮ y selector de emojis) al hacer clic fuera
+  useEffect(() => {
+    if (!isColorPickerOpen && activeMenuId === null && !isEmojiPickerOpen) return;
+
+    const handleOutsideClick = (e) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+
+      if (isColorPickerOpen && !target.closest('[data-popover="color-picker"]') && !target.closest('[data-trigger="color-picker"]')) {
+        setIsColorPickerOpen(false);
+      }
+
+      if (activeMenuId !== null && !target.closest('.message-actions-container')) {
+        setActiveMenuId(null);
+      }
+
+      if (isEmojiPickerOpen && !target.closest('.emoji-picker-popover') && !target.closest('.emoji-trigger-btn')) {
+        setIsEmojiPickerOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isColorPickerOpen, activeMenuId, isEmojiPickerOpen]);
+
+  useEffect(() => {
+    if (editingMessageId !== null && editInputRef.current) {
+      editInputRef.current.focus();
+    }
+  }, [editingMessageId]);
 
   const resolveSenderColor = (senderName) => {
     if (!senderName) return '#ff5555';
@@ -603,12 +701,28 @@ function App() {
               return prevMessages.filter((m) => m.id !== undefined && m.id !== receivedMessage.id);
             }
 
+            if (receivedMessage.type === 'REACTION') {
+              return prevMessages.map((m) => {
+                if (m.id !== undefined && m.id === receivedMessage.id) {
+                  if (receivedMessage.reactions && typeof receivedMessage.reactions === 'object') {
+                    return { ...m, reactions: receivedMessage.reactions };
+                  }
+                  return applyReactionUpdate(m, receivedMessage.emoji, receivedMessage.sender);
+                }
+                return m;
+              });
+            }
+
             const existsIndex = prevMessages.findIndex(
               (m) => m.id !== undefined && m.id === receivedMessage.id
             );
             if (existsIndex !== -1) {
               const updated = [...prevMessages];
-              updated[existsIndex] = receivedMessage;
+              updated[existsIndex] = {
+                ...prevMessages[existsIndex],
+                ...receivedMessage,
+                reactions: receivedMessage.reactions || prevMessages[existsIndex].reactions,
+              };
               return updated;
             }
             return [...prevMessages, receivedMessage];
@@ -639,6 +753,11 @@ function App() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const handleInsertEmoji = (emoji) => {
+    setMessageInput((prev) => `${prev}${emoji}`);
+    setIsEmojiPickerOpen(false);
+  };
+
   const sendMessage = (e) => {
     e.preventDefault();
     if (!messageInput.trim() || !username) return;
@@ -656,6 +775,7 @@ function App() {
       });
 
       setMessageInput('');
+      setIsEmojiPickerOpen(false);
     }
   };
 
@@ -749,6 +869,11 @@ function App() {
     }
   };
 
+  const cancelEditingMessage = () => {
+    setEditingMessageId(null);
+    setEditingText('');
+  };
+
   const saveEditedMessage = (msgId, index) => {
     if (!editingText.trim()) return;
 
@@ -777,8 +902,7 @@ function App() {
         )
       );
 
-      setEditingMessageId(null);
-      setEditingText('');
+      cancelEditingMessage();
       setActiveMenuId(null);
     }
   };
@@ -800,6 +924,32 @@ function App() {
 
       setMessages((prev) => prev.filter((m) => m.id !== msgId));
       setActiveMenuId(null);
+    }
+  };
+
+  const handleToggleReaction = (msgId, index, emoji) => {
+    if (!username) return;
+    const targetMessage = messages.find((m) => m.id === msgId || messages.indexOf(m) === index);
+    const identifier = targetMessage ? (targetMessage.id !== undefined ? targetMessage.id : index) : msgId;
+
+    setMessages((prev) =>
+      prev.map((m, idx) =>
+        m.id === identifier || idx === index
+          ? applyReactionUpdate(m, emoji, username)
+          : m
+      )
+    );
+
+    if (stompClientRef.current && stompClientRef.current.connected) {
+      stompClientRef.current.publish({
+        destination: '/app/chat.reactMessage',
+        body: JSON.stringify({
+          id: identifier,
+          sender: username,
+          emoji,
+          type: 'REACTION',
+        }),
+      });
     }
   };
 
@@ -872,6 +1022,7 @@ function App() {
 
               <button
                 type="button"
+                data-trigger="color-picker"
                 disabled={isUsernameLoading || !username}
                 onClick={() => setIsColorPickerOpen((prev) => !prev)}
                 style={{
@@ -970,6 +1121,7 @@ function App() {
             />
             <button
               type="button"
+              data-trigger="color-picker"
               onClick={() => setIsColorPickerOpen((prev) => !prev)}
               style={{
                 display: 'inline-flex',
@@ -1044,6 +1196,7 @@ function App() {
         {isColorPickerOpen && (
           <CustomColorPickerCard
             color={isEditingUsername ? tempColor : userColor}
+            previewName={isEditingUsername ? (tempUsername || username) : username}
             onChangeColor={(nextHex) => {
               if (isEditingUsername) {
                 setTempColor(nextHex);
@@ -1079,6 +1232,7 @@ function App() {
             const isEditingThis = editingMessageId === messageKey;
             const isMenuOpen = activeMenuId === messageKey;
             const senderColor = resolveSenderColor(msg.sender);
+            const reactionsObj = msg.reactions && typeof msg.reactions === 'object' ? msg.reactions : {};
 
             return (
               <div key={messageKey} className={`chat-message ${isMyMessage ? 'mine' : ''}`}>
@@ -1089,124 +1243,183 @@ function App() {
                   {msg.sender ? msg.sender.charAt(0).toUpperCase() : '?'}
                 </div>
 
-                <div className="message-bubble" style={{ fontFamily: MODERN_FONT }}>
-                  <div
-                    style={{
-                      wordBreak: 'break-word',
-                      paddingRight: isMyMessage && !isEditingThis ? '35px' : '0',
-                    }}
-                  >
-                    <span
+                <div className="message-column">
+                  <div className="message-bubble" style={{ fontFamily: MODERN_FONT }}>
+                    <div
                       style={{
-                        color: senderColor,
-                        fontWeight: 600,
-                        marginRight: '6px',
-                        fontSize: '13px',
-                        letterSpacing: '-0.01em',
+                        wordBreak: 'break-word',
+                        paddingRight: isMyMessage && !isEditingThis ? '35px' : '0',
                       }}
                     >
-                      {msg.sender}:
-                    </span>
+                      <span
+                        style={{
+                          color: senderColor,
+                          fontWeight: 600,
+                          marginRight: '6px',
+                          fontSize: '13px',
+                          letterSpacing: '-0.01em',
+                        }}
+                      >
+                        {msg.sender}:
+                      </span>
 
-                    {isEditingThis ? (
-                      <div style={{ display: 'inline-flex', gap: '6px', marginTop: '4px' }}>
-                        <input
-                          type="text"
-                          value={editingText}
-                          onChange={(e) => setEditingText(e.target.value)}
-                          style={{
-                            padding: '4px 8px',
-                            background: '#161b22',
-                            color: 'white',
-                            border: '1px solid #30363d',
-                            borderRadius: '4px',
-                            fontSize: '13px',
-                            fontFamily: MODERN_FONT,
-                          }}
-                        />
-                        <button
-                          onClick={() => saveEditedMessage(msg.id, index)}
-                          style={{
-                            padding: '4px 8px',
-                            background: '#238636',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: 500,
-                            fontFamily: MODERN_FONT,
-                          }}
-                        >
-                          OK
-                        </button>
-                        <button
-                          onClick={() => setEditingMessageId(null)}
-                          style={{
-                            padding: '4px 8px',
-                            background: '#30363d',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: 500,
-                            fontFamily: MODERN_FONT,
-                          }}
-                        >
-                          X
-                        </button>
-                      </div>
-                    ) : (
-                      <span style={{ color: '#e6edf3', fontSize: '13px', fontWeight: 400, lineHeight: 1.45 }}>
-                        {renderMessageContent(msg.content)}
-                        {msg.edited && (
-                          <span
+                      {isEditingThis ? (
+                        <div style={{ display: 'inline-flex', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
+                          <input
+                            ref={editInputRef}
+                            type="text"
+                            value={editingText}
+                            onChange={(e) => setEditingText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                saveEditedMessage(msg.id, index);
+                              } else if (e.key === 'Escape') {
+                                e.preventDefault();
+                                cancelEditingMessage();
+                              }
+                            }}
                             style={{
-                              color: '#9fb0c7',
-                              fontSize: '10.5px',
-                              marginLeft: '6px',
+                              padding: '4px 8px',
+                              background: '#161b22',
+                              color: 'white',
+                              border: '1px solid #30363d',
+                              borderRadius: '4px',
+                              fontSize: '13px',
+                              fontFamily: MODERN_FONT,
+                              outline: 'none',
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => saveEditedMessage(msg.id, index)}
+                            style={{
+                              padding: '4px 8px',
+                              background: '#238636',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
                               fontWeight: 500,
-                              whiteSpace: 'nowrap',
+                              fontFamily: MODERN_FONT,
                             }}
                           >
-                            (editado)
-                          </span>
+                            OK
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEditingMessage}
+                            style={{
+                              padding: '4px 8px',
+                              background: '#30363d',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: 500,
+                              fontFamily: MODERN_FONT,
+                            }}
+                          >
+                            X
+                          </button>
+                        </div>
+                      ) : (
+                        <span style={{ color: '#e6edf3', fontSize: '13px', fontWeight: 400, lineHeight: 1.45 }}>
+                          {renderMessageContent(msg.content)}
+                          {msg.edited && (
+                            <span
+                              style={{
+                                color: '#9fb0c7',
+                                fontSize: '10.5px',
+                                marginLeft: '6px',
+                                fontWeight: 500,
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              (editado)
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+
+                    {isMyMessage && !isEditingThis && (
+                      <div className="message-actions-container">
+                        <button
+                          type="button"
+                          onClick={() => setActiveMenuId(isMenuOpen ? null : messageKey)}
+                          className="menu-trigger-btn"
+                          title="Opciones"
+                        >
+                          ⋮
+                        </button>
+
+                        {isMenuOpen && (
+                          <div className="dropdown-menu" style={{ fontFamily: MODERN_FONT }}>
+                            <button
+                              type="button"
+                              className="dropdown-item"
+                              onClick={() => {
+                                setEditingMessageId(messageKey);
+                                setEditingText(msg.content);
+                                setActiveMenuId(null);
+                              }}
+                            >
+                              ✏️ Editar
+                            </button>
+                            <button
+                              type="button"
+                              className="dropdown-item delete"
+                              onClick={() => deleteMessage(msg.id)}
+                            >
+                              🗑️ Eliminar
+                            </button>
+                          </div>
                         )}
-                      </span>
+                      </div>
                     )}
                   </div>
 
-                  {isMyMessage && !isEditingThis && (
-                    <div className="message-actions-container">
-                      <button
-                        onClick={() => setActiveMenuId(isMenuOpen ? null : messageKey)}
-                        className="menu-trigger-btn"
-                        title="Opciones"
-                      >
-                        ⋮
-                      </button>
+                  {/* Reacciones rápidas y píldoras de reacciones */}
+                  {!isEditingThis && (
+                    <div className="message-reactions-row">
+                      <div className="quick-reactions-bar" aria-label="Reacciones rápidas">
+                        {REACTION_EMOJIS.map((emoji) => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            className="quick-reaction-btn"
+                            disabled={!username}
+                            onClick={() => handleToggleReaction(msg.id, index, emoji)}
+                            title={`Reaccionar con ${emoji}`}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
 
-                      {isMenuOpen && (
-                        <div className="dropdown-menu" style={{ fontFamily: MODERN_FONT }}>
+                      {Object.entries(reactionsObj).map(([emoji, reactors]) => {
+                        if (!Array.isArray(reactors) || reactors.length === 0) return null;
+                        const hasReacted = username
+                          ? reactors.some((u) => u.toLowerCase() === username.trim().toLowerCase())
+                          : false;
+
+                        return (
                           <button
-                            className="dropdown-item"
-                            onClick={() => {
-                              setEditingMessageId(messageKey);
-                              setEditingText(msg.content);
-                              setActiveMenuId(null);
-                            }}
+                            key={emoji}
+                            type="button"
+                            className={`reaction-pill-btn ${hasReacted ? 'active' : ''}`}
+                            disabled={!username}
+                            onClick={() => handleToggleReaction(msg.id, index, emoji)}
+                            title={reactors.join(', ')}
                           >
-                            ✏️ Editar
+                            <span>{emoji}</span>
+                            <span>{reactors.length}</span>
                           </button>
-                          <button
-                            className="dropdown-item delete"
-                            onClick={() => deleteMessage(msg.id)}
-                          >
-                            🗑️ Eliminar
-                          </button>
-                        </div>
-                      )}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -1217,8 +1430,24 @@ function App() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Formulario de envío */}
+      {/* Formulario de envío + selector de emojis */}
       <form onSubmit={sendMessage} className="chat-input-form" style={{ fontFamily: MODERN_FONT }}>
+        {isEmojiPickerOpen && username && (
+          <div className="emoji-picker-popover" role="dialog" aria-label="Selector de emojis">
+            {QUICK_EMOJIS.map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                className="emoji-option-btn"
+                onClick={() => handleInsertEmoji(emoji)}
+                title={`Insertar ${emoji}`}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        )}
+
         <input
           type="text"
           value={messageInput}
@@ -1227,6 +1456,17 @@ function App() {
           disabled={!username}
           style={{ fontFamily: MODERN_FONT }}
         />
+
+        <button
+          type="button"
+          className="emoji-trigger-btn"
+          disabled={!username}
+          onClick={() => setIsEmojiPickerOpen((prev) => !prev)}
+          title="Insertar emoji"
+        >
+          😊
+        </button>
+
         <button type="submit" className="chat-send-btn" disabled={!username} style={{ fontFamily: MODERN_FONT, fontWeight: 600 }}>
           Enviar
         </button>
