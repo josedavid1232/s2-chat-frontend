@@ -5,8 +5,31 @@ import './App.css';
 
 const MODERN_FONT = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 const DISPLAY_FONT = "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-const QUICK_EMOJIS = ['😊', '😂', '🔥', '👍', '❤️', '🎮', '🚀', 'GG'];
-const REACTION_EMOJIS = ['👍', '❤️', '😂'];
+
+const EMOJI_CATEGORIES = {
+  frequent: {
+    label: 'Frecuentes',
+    icon: '🕒',
+    items: ['😂', '❤️', '👍', '🔥', '😊', '🙏', '😮', '😢', '🎮', '🚀', '👀', '💯', '✨', '😎', '🤝', '🎉'],
+  },
+  faces: {
+    label: 'Caras y emociones',
+    icon: '😄',
+    items: ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '😉', '😍', '🥰', '😘', '😋', '😎', '🤩', '🤔', '🤨', '😐', '🙄', '😮‍💨', '😴', '😭', '😡'],
+  },
+  gestures: {
+    label: 'Gestos y corazones',
+    icon: '👍',
+    items: ['👍', '👎', '👏', '🙌', '👐', '🤝', '🙏', '✌️', '🤞', '🤟', '🤘', '👌', '🤌', '👈', '👉', '☝️', '💪', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '💔', '🔥'],
+  },
+  gaming: {
+    label: 'Gaming & Extras',
+    icon: '🎮',
+    items: ['🎮', '🕹️', '👾', '🏆', '🥇', '⚡', '💥', '💣', '🎯', '🚀', '🛸', '💎', '👑', '🎧', '🔊', '📌'],
+  },
+};
+
+const QUICK_REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
 
 // Función para generar un color consistente basado en el apodo (respaldo si no hay color elegido)
 const getUserColor = (name) => {
@@ -462,6 +485,28 @@ function CustomColorPickerCard({ color, previewName, onChangeColor, onClose }) {
   );
 }
 
+// Ícono de carita sonriente tipo WhatsApp
+function WhatsAppSmileIcon({ size = 16 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9.5" />
+      <circle cx="9" cy="10" r="1" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="10" r="1" fill="currentColor" stroke="none" />
+      <path d="M8.3 14.3c.9 1.4 2.2 2.2 3.7 2.2s2.8-.8 3.7-2.2" />
+    </svg>
+  );
+}
+
 // Aplica o alternar reacción { "👍": ["user1", ...] } en memoria
 const applyReactionUpdate = (msg, emoji, reactorName) => {
   if (!emoji || !reactorName) return msg;
@@ -489,6 +534,8 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [activeEmojiTab, setActiveEmojiTab] = useState('frequent');
+  const [emojiSearch, setEmojiSearch] = useState('');
 
   // Apodo bloqueado guardado en localStorage (persiste al recargar con F5)
   const [username, setUsername] = useState(() => {
@@ -516,24 +563,31 @@ function App() {
   const [userCount, setUserCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Estado para la edición de mensajes y menú de 3 puntos
+  // Estado para edición, menú de 3 puntos y popover de reacción por mensaje
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editingText, setEditingText] = useState('');
   const [activeMenuId, setActiveMenuId] = useState(null);
+  const [openReactionPickerId, setOpenReactionPickerId] = useState(null);
 
   const stompClientRef = useRef(null);
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
 
-  // Cerrar popovers (Color Picker, menú ⋮ y selector de emojis) al hacer clic fuera
+  // Cerrar popovers al hacer clic fuera
   useEffect(() => {
-    if (!isColorPickerOpen && activeMenuId === null && !isEmojiPickerOpen) return;
+    if (!isColorPickerOpen && activeMenuId === null && !isEmojiPickerOpen && openReactionPickerId === null) {
+      return;
+    }
 
     const handleOutsideClick = (e) => {
       const target = e.target;
       if (!(target instanceof Element)) return;
 
-      if (isColorPickerOpen && !target.closest('[data-popover="color-picker"]') && !target.closest('[data-trigger="color-picker"]')) {
+      if (
+        isColorPickerOpen &&
+        !target.closest('[data-popover="color-picker"]') &&
+        !target.closest('[data-trigger="color-picker"]')
+      ) {
         setIsColorPickerOpen(false);
       }
 
@@ -541,14 +595,18 @@ function App() {
         setActiveMenuId(null);
       }
 
-      if (isEmojiPickerOpen && !target.closest('.emoji-picker-popover') && !target.closest('.emoji-trigger-btn')) {
+      if (isEmojiPickerOpen && !target.closest('.wa-emoji-picker') && !target.closest('.emoji-trigger-btn')) {
         setIsEmojiPickerOpen(false);
+      }
+
+      if (openReactionPickerId !== null && !target.closest('.wa-react-trigger-wrap')) {
+        setOpenReactionPickerId(null);
       }
     };
 
     document.addEventListener('mousedown', handleOutsideClick);
     return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, [isColorPickerOpen, activeMenuId, isEmojiPickerOpen]);
+  }, [isColorPickerOpen, activeMenuId, isEmojiPickerOpen, openReactionPickerId]);
 
   useEffect(() => {
     if (editingMessageId !== null && editInputRef.current) {
@@ -755,7 +813,6 @@ function App() {
 
   const handleInsertEmoji = (emoji) => {
     setMessageInput((prev) => `${prev}${emoji}`);
-    setIsEmojiPickerOpen(false);
   };
 
   const sendMessage = (e) => {
@@ -951,7 +1008,17 @@ function App() {
         }),
       });
     }
+
+    setOpenReactionPickerId(null);
   };
+
+  const allEmojisFlat = Array.from(
+    new Set(Object.values(EMOJI_CATEGORIES).flatMap((cat) => cat.items))
+  );
+  const currentCategoryData = EMOJI_CATEGORIES[activeEmojiTab] || EMOJI_CATEGORIES.frequent;
+  const displayedEmojis = emojiSearch.trim()
+    ? allEmojisFlat.filter((em) => em.includes(emojiSearch.trim()))
+    : currentCategoryData.items;
 
   return (
     <div className="chat-container" style={{ fontFamily: MODERN_FONT }}>
@@ -1231,6 +1298,7 @@ function App() {
             const messageKey = msg.id !== undefined ? msg.id : index;
             const isEditingThis = editingMessageId === messageKey;
             const isMenuOpen = activeMenuId === messageKey;
+            const isReactionPopoverOpen = openReactionPickerId === messageKey;
             const senderColor = resolveSenderColor(msg.sender);
             const reactionsObj = msg.reactions && typeof msg.reactions === 'object' ? msg.reactions : {};
 
@@ -1244,162 +1312,183 @@ function App() {
                 </div>
 
                 <div className="message-column">
-                  <div className="message-bubble" style={{ fontFamily: MODERN_FONT }}>
-                    <div
-                      style={{
-                        wordBreak: 'break-word',
-                        paddingRight: isMyMessage && !isEditingThis ? '35px' : '0',
-                      }}
-                    >
-                      <span
+                  <div className="bubble-side-row">
+                    <div className="message-bubble" style={{ fontFamily: MODERN_FONT }}>
+                      <div
                         style={{
-                          color: senderColor,
-                          fontWeight: 600,
-                          marginRight: '6px',
-                          fontSize: '13px',
-                          letterSpacing: '-0.01em',
+                          wordBreak: 'break-word',
+                          paddingRight: isMyMessage && !isEditingThis ? '32px' : '0',
                         }}
                       >
-                        {msg.sender}:
-                      </span>
+                        <span
+                          style={{
+                            color: senderColor,
+                            fontWeight: 600,
+                            marginRight: '6px',
+                            fontSize: '13px',
+                            letterSpacing: '-0.01em',
+                          }}
+                        >
+                          {msg.sender}:
+                        </span>
 
-                      {isEditingThis ? (
-                        <div style={{ display: 'inline-flex', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
-                          <input
-                            ref={editInputRef}
-                            type="text"
-                            value={editingText}
-                            onChange={(e) => setEditingText(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                saveEditedMessage(msg.id, index);
-                              } else if (e.key === 'Escape') {
-                                e.preventDefault();
-                                cancelEditingMessage();
-                              }
-                            }}
-                            style={{
-                              padding: '4px 8px',
-                              background: '#161b22',
-                              color: 'white',
-                              border: '1px solid #30363d',
-                              borderRadius: '4px',
-                              fontSize: '13px',
-                              fontFamily: MODERN_FONT,
-                              outline: 'none',
-                            }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => saveEditedMessage(msg.id, index)}
-                            style={{
-                              padding: '4px 8px',
-                              background: '#238636',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: 500,
-                              fontFamily: MODERN_FONT,
-                            }}
-                          >
-                            OK
-                          </button>
-                          <button
-                            type="button"
-                            onClick={cancelEditingMessage}
-                            style={{
-                              padding: '4px 8px',
-                              background: '#30363d',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: 500,
-                              fontFamily: MODERN_FONT,
-                            }}
-                          >
-                            X
-                          </button>
-                        </div>
-                      ) : (
-                        <span style={{ color: '#e6edf3', fontSize: '13px', fontWeight: 400, lineHeight: 1.45 }}>
-                          {renderMessageContent(msg.content)}
-                          {msg.edited && (
-                            <span
+                        {isEditingThis ? (
+                          <div style={{ display: 'inline-flex', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
+                            <input
+                              ref={editInputRef}
+                              type="text"
+                              value={editingText}
+                              onChange={(e) => setEditingText(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  saveEditedMessage(msg.id, index);
+                                } else if (e.key === 'Escape') {
+                                  e.preventDefault();
+                                  cancelEditingMessage();
+                                }
+                              }}
                               style={{
-                                color: '#9fb0c7',
-                                fontSize: '10.5px',
-                                marginLeft: '6px',
+                                padding: '4px 8px',
+                                background: '#161b22',
+                                color: 'white',
+                                border: '1px solid #30363d',
+                                borderRadius: '4px',
+                                fontSize: '13px',
+                                fontFamily: MODERN_FONT,
+                                outline: 'none',
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => saveEditedMessage(msg.id, index)}
+                              style={{
+                                padding: '4px 8px',
+                                background: '#238636',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '12px',
                                 fontWeight: 500,
-                                whiteSpace: 'nowrap',
+                                fontFamily: MODERN_FONT,
                               }}
                             >
-                              (editado)
-                            </span>
+                              OK
+                            </button>
+                            <button
+                              type="button"
+                              onClick={cancelEditingMessage}
+                              style={{
+                                padding: '4px 8px',
+                                background: '#30363d',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                fontWeight: 500,
+                                fontFamily: MODERN_FONT,
+                              }}
+                            >
+                              X
+                            </button>
+                          </div>
+                        ) : (
+                          <span style={{ color: '#e6edf3', fontSize: '13px', fontWeight: 400, lineHeight: 1.45 }}>
+                            {renderMessageContent(msg.content)}
+                            {msg.edited && (
+                              <span
+                                style={{
+                                  color: '#9fb0c7',
+                                  fontSize: '10.5px',
+                                  marginLeft: '6px',
+                                  fontWeight: 500,
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                (editado)
+                              </span>
+                            )}
+                          </span>
+                        )}
+                      </div>
+
+                      {isMyMessage && !isEditingThis && (
+                        <div className="message-actions-container">
+                          <button
+                            type="button"
+                            onClick={() => setActiveMenuId(isMenuOpen ? null : messageKey)}
+                            className="menu-trigger-btn"
+                            title="Opciones"
+                          >
+                            ⋮
+                          </button>
+
+                          {isMenuOpen && (
+                            <div className="dropdown-menu" style={{ fontFamily: MODERN_FONT }}>
+                              <button
+                                type="button"
+                                className="dropdown-item"
+                                onClick={() => {
+                                  setEditingMessageId(messageKey);
+                                  setEditingText(msg.content);
+                                  setActiveMenuId(null);
+                                }}
+                              >
+                                ✏️ Editar
+                              </button>
+                              <button
+                                type="button"
+                                className="dropdown-item delete"
+                                onClick={() => deleteMessage(msg.id)}
+                              >
+                                🗑️ Eliminar
+                              </button>
+                            </div>
                           )}
-                        </span>
+                        </div>
                       )}
                     </div>
 
-                    {isMyMessage && !isEditingThis && (
-                      <div className="message-actions-container">
+                    {/* Botón circular de reacción al lado de la burbuja (estilo WhatsApp) */}
+                    {!isEditingThis && (
+                      <div className={`wa-react-trigger-wrap ${isReactionPopoverOpen ? 'open' : ''}`}>
                         <button
                           type="button"
-                          onClick={() => setActiveMenuId(isMenuOpen ? null : messageKey)}
-                          className="menu-trigger-btn"
-                          title="Opciones"
+                          className="wa-react-circle-btn"
+                          disabled={!username}
+                          onClick={() =>
+                            setOpenReactionPickerId((prev) => (prev === messageKey ? null : messageKey))
+                          }
+                          title="Reaccionar"
+                          aria-label="Reaccionar al mensaje"
                         >
-                          ⋮
+                          <WhatsAppSmileIcon size={15} />
                         </button>
 
-                        {isMenuOpen && (
-                          <div className="dropdown-menu" style={{ fontFamily: MODERN_FONT }}>
-                            <button
-                              type="button"
-                              className="dropdown-item"
-                              onClick={() => {
-                                setEditingMessageId(messageKey);
-                                setEditingText(msg.content);
-                                setActiveMenuId(null);
-                              }}
-                            >
-                              ✏️ Editar
-                            </button>
-                            <button
-                              type="button"
-                              className="dropdown-item delete"
-                              onClick={() => deleteMessage(msg.id)}
-                            >
-                              🗑️ Eliminar
-                            </button>
+                        {isReactionPopoverOpen && (
+                          <div className="wa-reaction-popover" role="dialog" aria-label="Elegir reacción">
+                            {QUICK_REACTION_EMOJIS.map((emoji) => (
+                              <button
+                                key={emoji}
+                                type="button"
+                                className="wa-reaction-choice-btn"
+                                onClick={() => handleToggleReaction(msg.id, index, emoji)}
+                                title={`Reaccionar con ${emoji}`}
+                              >
+                                {emoji}
+                              </button>
+                            ))}
                           </div>
                         )}
                       </div>
                     )}
                   </div>
 
-                  {/* Reacciones rápidas y píldoras de reacciones */}
-                  {!isEditingThis && (
+                  {/* Contadores de reacciones aplicadas */}
+                  {!isEditingThis && Object.keys(reactionsObj).length > 0 && (
                     <div className="message-reactions-row">
-                      <div className="quick-reactions-bar" aria-label="Reacciones rápidas">
-                        {REACTION_EMOJIS.map((emoji) => (
-                          <button
-                            key={emoji}
-                            type="button"
-                            className="quick-reaction-btn"
-                            disabled={!username}
-                            onClick={() => handleToggleReaction(msg.id, index, emoji)}
-                            title={`Reaccionar con ${emoji}`}
-                          >
-                            {emoji}
-                          </button>
-                        ))}
-                      </div>
-
                       {Object.entries(reactionsObj).map(([emoji, reactors]) => {
                         if (!Array.isArray(reactors) || reactors.length === 0) return null;
                         const hasReacted = username
@@ -1430,21 +1519,54 @@ function App() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Formulario de envío + selector de emojis */}
+      {/* Formulario de envío + selector de emojis estilo WhatsApp */}
       <form onSubmit={sendMessage} className="chat-input-form" style={{ fontFamily: MODERN_FONT }}>
         {isEmojiPickerOpen && username && (
-          <div className="emoji-picker-popover" role="dialog" aria-label="Selector de emojis">
-            {QUICK_EMOJIS.map((emoji) => (
-              <button
-                key={emoji}
-                type="button"
-                className="emoji-option-btn"
-                onClick={() => handleInsertEmoji(emoji)}
-                title={`Insertar ${emoji}`}
-              >
-                {emoji}
-              </button>
-            ))}
+          <div className="wa-emoji-picker" role="dialog" aria-label="Selector de emojis">
+            <div className="wa-emoji-tabs">
+              {Object.entries(EMOJI_CATEGORIES).map(([key, cat]) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={`wa-emoji-tab-btn ${activeEmojiTab === key && !emojiSearch ? 'active' : ''}`}
+                  onClick={() => {
+                    setEmojiSearch('');
+                    setActiveEmojiTab(key);
+                  }}
+                  title={cat.label}
+                >
+                  {cat.icon}
+                </button>
+              ))}
+            </div>
+
+            <div className="wa-emoji-search-wrap">
+              <input
+                type="text"
+                className="wa-emoji-search-input"
+                value={emojiSearch}
+                onChange={(e) => setEmojiSearch(e.target.value)}
+                placeholder="Filtrar emoji..."
+              />
+            </div>
+
+            <div className="wa-emoji-section-label">
+              {emojiSearch.trim() ? 'Resultados' : currentCategoryData.label}
+            </div>
+
+            <div className="wa-emoji-grid">
+              {displayedEmojis.map((emoji, idx) => (
+                <button
+                  key={`${emoji}-${idx}`}
+                  type="button"
+                  className="wa-emoji-cell"
+                  onClick={() => handleInsertEmoji(emoji)}
+                  title={`Insertar ${emoji}`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -1462,9 +1584,10 @@ function App() {
           className="emoji-trigger-btn"
           disabled={!username}
           onClick={() => setIsEmojiPickerOpen((prev) => !prev)}
-          title="Insertar emoji"
+          title="Emojis"
+          aria-label="Abrir selector de emojis"
         >
-          😊
+          <WhatsAppSmileIcon size={18} />
         </button>
 
         <button type="submit" className="chat-send-btn" disabled={!username} style={{ fontFamily: MODERN_FONT, fontWeight: 600 }}>
