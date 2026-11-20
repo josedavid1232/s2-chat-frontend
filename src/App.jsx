@@ -11,7 +11,7 @@ const getUserColor = (name) => {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
   const colors = [
-    '#ff5555', '#58a6ff', '#3fb950', '#d29922', 
+    '#ff5555', '#58a6ff', '#3fb950', '#d29922',
     '#bc8cff', '#f778ba', '#79c0ff', '#56d364', '#e3b341'
   ];
   return colors[Math.abs(hash) % colors.length];
@@ -26,11 +26,11 @@ const renderMessageContent = (content) => {
   return parts.map((part, i) => {
     if (part.match(urlRegex)) {
       return (
-        <a 
-          key={i} 
-          href={part} 
-          target="_blank" 
-          rel="noopener noreferrer" 
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
           style={{ color: '#58a6ff', textDecoration: 'underline', wordBreak: 'break-all' }}
         >
           {part}
@@ -42,19 +42,24 @@ const renderMessageContent = (content) => {
 };
 
 function App() {
+  const backendUrl = import.meta.env.VITE_API_URL || 'https://s2-chat-backend.onrender.com';
+
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
-   
-  // Usuario guardado en localStorage o generado
+
+  // Apodo bloqueado guardado en localStorage (persiste al recargar con F5)
   const [username, setUsername] = useState(() => {
-    return localStorage.getItem('chat_username') || ('Heroe_' + Math.floor(Math.random() * 1000));
+    return localStorage.getItem('chat_locked_username') || '';
   });
 
   const [isEditingUsername, setIsEditingUsername] = useState(false);
-  const [tempUsername, setTempUsername] = useState(username);
+  const [tempUsername, setTempUsername] = useState('');
+  const [usernameError, setUsernameError] = useState('');
+  const [isUsernameLoading, setIsUsernameLoading] = useState(false);
+
   const [userCount, setUserCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-   
+
   // Estado para la edición de mensajes y menú de 3 puntos
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editingText, setEditingText] = useState('');
@@ -63,42 +68,95 @@ function App() {
   const stompClientRef = useRef(null);
   const messagesEndRef = useRef(null);
 
+  // Bloquear un nombre en el backend
+  const lockUsernameOnServer = async (candidateName) => {
+    const res = await fetch(`${backendUrl}/api/usernames/lock`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: candidateName }),
+    });
+    const data = await res.json();
+    return { ok: res.ok, status: res.status, data };
+  };
+
+  // Liberar el nombre actual en el backend
+  const releaseUsernameOnServer = async (nameToRelease) => {
+    if (!nameToRelease) return;
+    await fetch(`${backendUrl}/api/usernames/release`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: nameToRelease }),
+    });
+  };
+
+  // Si no hay apodo bloqueado aún al entrar, asignar e intentar bloquear uno inicial
   useEffect(() => {
-    const backendUrl = import.meta.env.VITE_API_URL || 'https://s2-chat-backend.onrender.com';
-     
+    if (username) return;
+
+    let cancelled = false;
+    const initDefaultUsername = async () => {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const candidate = 'Heroe_' + Math.floor(100 + Math.random() * 900);
+        try {
+          const { ok, data } = await lockUsernameOnServer(candidate);
+          if (cancelled) return;
+          if (ok && data.username) {
+            setUsername(data.username);
+            localStorage.setItem('chat_locked_username', data.username);
+            return;
+          }
+        } catch (err) {
+          console.error('Error bloqueando apodo inicial:', err);
+          break;
+        }
+      }
+      if (!cancelled) {
+        setIsEditingUsername(true);
+        setUsernameError('Elige un apodo disponible para entrar.');
+      }
+    };
+
+    initDefaultUsername();
+    return () => {
+      cancelled = true;
+    };
+  }, [username, backendUrl]);
+
+  useEffect(() => {
     // 1. Cargar historial
     fetch(`${backendUrl}/messages`)
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         if (Array.isArray(data)) {
           setMessages(data);
         }
         setIsLoading(false);
       })
-      .catch(err => {
-        console.error("Error cargando el historial:", err);
+      .catch((err) => {
+        console.error('Error cargando el historial:', err);
         setIsLoading(false);
       });
 
     // 2. Configurar WebSocket
     const socketFactory = () => new SockJS(`${backendUrl}/ws`);
-     
+
     const client = new Client({
       webSocketFactory: socketFactory,
       reconnectDelay: 5000,
       onConnect: () => {
         console.log('Conectado al WebSocket');
-         
+
         client.subscribe('/topic/public', (message) => {
           const receivedMessage = JSON.parse(message.body);
-          
+
           setMessages((prevMessages) => {
-            // Manejo de mensaje eliminado por tipo de evento o ID
             if (receivedMessage.type === 'DELETE') {
-              return prevMessages.filter(m => m.id !== undefined && m.id !== receivedMessage.id);
+              return prevMessages.filter((m) => m.id !== undefined && m.id !== receivedMessage.id);
             }
 
-            const existsIndex = prevMessages.findIndex(m => m.id !== undefined && m.id === receivedMessage.id);
+            const existsIndex = prevMessages.findIndex(
+              (m) => m.id !== undefined && m.id === receivedMessage.id
+            );
             if (existsIndex !== -1) {
               const updated = [...prevMessages];
               updated[existsIndex] = receivedMessage;
@@ -126,7 +184,7 @@ function App() {
         stompClientRef.current.deactivate();
       }
     };
-  }, []);
+  }, [backendUrl]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -134,13 +192,13 @@ function App() {
 
   const sendMessage = (e) => {
     e.preventDefault();
-    if (!messageInput.trim()) return;
+    if (!messageInput.trim() || !username) return;
 
     if (stompClientRef.current && stompClientRef.current.connected) {
       const chatMessage = {
         sender: username,
         content: messageInput,
-        type: 'CHAT'
+        type: 'CHAT',
       };
 
       stompClientRef.current.publish({
@@ -152,13 +210,68 @@ function App() {
     }
   };
 
-  const handleUsernameSubmit = (e) => {
+  // Reclamar y bloquear un apodo nuevo (liberando el anterior si existía)
+  const handleUsernameSubmit = async (e) => {
     e.preventDefault();
-    if (tempUsername.trim()) {
-      const newName = tempUsername.trim();
-      setUsername(newName);
-      localStorage.setItem('chat_username', newName);
+    const cleanName = tempUsername.trim();
+    if (!cleanName) {
+      setUsernameError('El apodo no puede estar vacío.');
+      return;
+    }
+
+    if (username && cleanName.toLowerCase() === username.toLowerCase()) {
+      setUsername(cleanName);
+      localStorage.setItem('chat_locked_username', cleanName);
+      setUsernameError('');
       setIsEditingUsername(false);
+      return;
+    }
+
+    setIsUsernameLoading(true);
+    setUsernameError('');
+
+    try {
+      const { ok, data } = await lockUsernameOnServer(cleanName);
+      if (!ok) {
+        setUsernameError(data.error || 'Ese nombre ya está bloqueado por otro usuario.');
+        setIsUsernameLoading(false);
+        return;
+      }
+
+      const previousName = username;
+      if (previousName) {
+        await releaseUsernameOnServer(previousName);
+      }
+
+      setUsername(data.username);
+      localStorage.setItem('chat_locked_username', data.username);
+      setIsEditingUsername(false);
+      setTempUsername('');
+    } catch (err) {
+      console.error('Error al bloquear apodo:', err);
+      setUsernameError('No se pudo validar el apodo con el servidor.');
+    } finally {
+      setIsUsernameLoading(false);
+    }
+  };
+
+  // Quitar / liberar el apodo actual explícitamente
+  const handleReleaseUsername = async () => {
+    if (!username) return;
+    setIsUsernameLoading(true);
+    setUsernameError('');
+
+    try {
+      await releaseUsernameOnServer(username);
+      localStorage.removeItem('chat_locked_username');
+      setUsername('');
+      setTempUsername('');
+      setIsEditingUsername(true);
+    } catch (err) {
+      console.error('Error al quitar apodo:', err);
+      setUsernameError('No se pudo liberar el apodo. Intenta de nuevo.');
+    } finally {
+      setIsUsernameLoading(false);
     }
   };
 
@@ -166,7 +279,7 @@ function App() {
   const saveEditedMessage = (msgId, index) => {
     if (!editingText.trim()) return;
 
-    const targetMessage = messages.find(m => m.id === msgId || messages.indexOf(m) === index);
+    const targetMessage = messages.find((m) => m.id === msgId || messages.indexOf(m) === index);
     const identifier = targetMessage ? (targetMessage.id !== undefined ? targetMessage.id : index) : msgId;
 
     if (stompClientRef.current && stompClientRef.current.connected) {
@@ -175,7 +288,7 @@ function App() {
         sender: username,
         content: editingText.trim(),
         edited: true,
-        type: 'EDIT'
+        type: 'EDIT',
       };
 
       stompClientRef.current.publish({
@@ -183,10 +296,14 @@ function App() {
         body: JSON.stringify(editPayload),
       });
 
-      setMessages(prev => prev.map((m, idx) => 
-        (m.id === identifier || idx === index) ? { ...m, content: editingText.trim(), edited: true } : m
-      ));
-       
+      setMessages((prev) =>
+        prev.map((m, idx) =>
+          m.id === identifier || idx === index
+            ? { ...m, content: editingText.trim(), edited: true }
+            : m
+        )
+      );
+
       setEditingMessageId(null);
       setEditingText('');
       setActiveMenuId(null);
@@ -195,14 +312,14 @@ function App() {
 
   // Eliminar mensaje de forma persistente y sincronizada
   const deleteMessage = (msgId, index) => {
-    const targetMessage = messages.find(m => m.id === msgId || messages.indexOf(m) === index);
+    const targetMessage = messages.find((m) => m.id === msgId || messages.indexOf(m) === index);
     const identifier = targetMessage ? (targetMessage.id !== undefined ? targetMessage.id : index) : msgId;
 
     if (stompClientRef.current && stompClientRef.current.connected) {
       const deletePayload = {
         id: identifier,
         sender: username,
-        type: 'DELETE'
+        type: 'DELETE',
       };
 
       stompClientRef.current.publish({
@@ -210,8 +327,7 @@ function App() {
         body: JSON.stringify(deletePayload),
       });
 
-      // Actualización local usando estrictamente el ID persistente para evitar que reviva
-      setMessages(prev => prev.filter(m => m.id !== identifier));
+      setMessages((prev) => prev.filter((m) => m.id !== identifier));
       setActiveMenuId(null);
     }
   };
@@ -221,29 +337,91 @@ function App() {
       {/* Cabecera unificada y moderna */}
       <div className="chat-header-bar">
         <h2>Chat Global</h2>
-         
+
         <div className="status-pill">
-          <span style={{ height: '8px', width: '8px', backgroundColor: '#238636', borderRadius: '50%', display: 'inline-block', boxShadow: '0 0 8px #238636' }}></span>
+          <span
+            style={{
+              height: '8px',
+              width: '8px',
+              backgroundColor: '#238636',
+              borderRadius: '50%',
+              display: 'inline-block',
+              boxShadow: '0 0 8px #238636',
+            }}
+          ></span>
           <span style={{ color: '#3fb950', fontWeight: 'bold' }}>
             {userCount} {userCount === 1 ? 'conectado' : 'conectados'}
           </span>
-          <span style={{ color: '#8b949e', borderLeft: '1px solid #30363d', paddingLeft: '8px', fontSize: '11px' }}>
+          <span
+            style={{
+              color: '#8b949e',
+              borderLeft: '1px solid #30363d',
+              paddingLeft: '8px',
+              fontSize: '11px',
+            }}
+          >
             🧹 30 min
           </span>
         </div>
       </div>
-       
-      {/* Barra de perfil / Apodo rediseñada */}
-      <div className="user-profile-bar">
+
+      {/* Barra de perfil / Apodo bloqueado */}
+      <div className="user-profile-bar" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '6px' }}>
         {!isEditingUsername ? (
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', fontSize: '13px' }}>
-            <span>Tu apodo activo: <strong style={{ color: getUserColor(username) }}>{username}</strong></span>
-            <button 
-              onClick={() => { setTempUsername(username); setIsEditingUsername(true); }} 
-              style={{ padding: '4px 10px', cursor: 'pointer', background: '#238636', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px' }}
-            >
-              Cambiar apodo
-            </button>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              width: '100%',
+              fontSize: '13px',
+              gap: '8px',
+            }}
+          >
+            <span>
+              Tu apodo bloqueado:{' '}
+              <strong style={{ color: getUserColor(username) }}>
+                {username || 'Asignando...'}
+              </strong>
+            </span>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button
+                type="button"
+                disabled={isUsernameLoading || !username}
+                onClick={() => {
+                  setTempUsername(username);
+                  setUsernameError('');
+                  setIsEditingUsername(true);
+                }}
+                style={{
+                  padding: '4px 10px',
+                  cursor: 'pointer',
+                  background: '#238636',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                }}
+              >
+                Cambiar apodo
+              </button>
+              <button
+                type="button"
+                disabled={isUsernameLoading || !username}
+                onClick={handleReleaseUsername}
+                style={{
+                  padding: '4px 10px',
+                  cursor: 'pointer',
+                  background: '#da3633',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                }}
+              >
+                Quitar apodo
+              </button>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleUsernameSubmit} style={{ display: 'flex', gap: '8px', width: '100%' }}>
@@ -251,18 +429,62 @@ function App() {
               type="text"
               value={tempUsername}
               onChange={(e) => setTempUsername(e.target.value)}
-              placeholder="Escribe tu nuevo apodo..."
-              style={{ flex: 1, padding: '6px 10px', background: '#080d17', color: 'white', border: '1px solid #30363d', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+              placeholder="Escribe un apodo para bloquearlo..."
+              disabled={isUsernameLoading}
+              style={{
+                flex: 1,
+                padding: '6px 10px',
+                background: '#080d17',
+                color: 'white',
+                border: '1px solid #30363d',
+                borderRadius: '6px',
+                fontSize: '13px',
+                outline: 'none',
+              }}
             />
-            <button type="submit" style={{ padding: '6px 12px', cursor: 'pointer', background: '#238636', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px' }}>Guardar</button>
-            <button 
-              type="button" 
-              onClick={() => setIsEditingUsername(false)}
-              style={{ padding: '6px 12px', cursor: 'pointer', background: '#da3633', color: 'white', border: 'none', borderRadius: '6px', fontSize: '12px' }}
+            <button
+              type="submit"
+              disabled={isUsernameLoading}
+              style={{
+                padding: '6px 12px',
+                cursor: 'pointer',
+                background: '#238636',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '12px',
+              }}
             >
-              Cancelar
+              {isUsernameLoading ? '...' : 'Bloquear'}
             </button>
+            {username && (
+              <button
+                type="button"
+                disabled={isUsernameLoading}
+                onClick={() => {
+                  setIsEditingUsername(false);
+                  setUsernameError('');
+                }}
+                style={{
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  background: '#30363d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                }}
+              >
+                Cancelar
+              </button>
+            )}
           </form>
+        )}
+
+        {usernameError && (
+          <div style={{ color: '#f85149', fontSize: '12px' }}>
+            ⚠️ {usernameError}
+          </div>
         )}
       </div>
 
@@ -284,10 +506,7 @@ function App() {
             const isMenuOpen = activeMenuId === messageKey;
 
             return (
-              <div 
-                key={messageKey} 
-                className={`chat-message ${isMyMessage ? 'mine' : ''}`}
-              >
+              <div key={messageKey} className={`chat-message ${isMyMessage ? 'mine' : ''}`}>
                 {/* Avatar circular con la inicial */}
                 <div className="user-avatar" style={{ backgroundColor: getUserColor(msg.sender) }}>
                   {msg.sender ? msg.sender.charAt(0).toUpperCase() : '?'}
@@ -295,8 +514,20 @@ function App() {
 
                 {/* Burbuja de mensaje */}
                 <div className="message-bubble">
-                  <div style={{ wordBreak: 'break-word', paddingRight: isMyMessage && !isEditingThis ? '35px' : '0' }}>
-                    <span style={{ color: getUserColor(msg.sender), fontWeight: 'bold', marginRight: '6px', fontSize: '13px' }}>
+                  <div
+                    style={{
+                      wordBreak: 'break-word',
+                      paddingRight: isMyMessage && !isEditingThis ? '35px' : '0',
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: getUserColor(msg.sender),
+                        fontWeight: 'bold',
+                        marginRight: '6px',
+                        fontSize: '13px',
+                      }}
+                    >
                       {msg.sender}:
                     </span>
 
@@ -306,17 +537,40 @@ function App() {
                           type="text"
                           value={editingText}
                           onChange={(e) => setEditingText(e.target.value)}
-                          style={{ padding: '4px 8px', background: '#161b22', color: 'white', border: '1px solid #30363d', borderRadius: '4px', fontSize: '13px' }}
+                          style={{
+                            padding: '4px 8px',
+                            background: '#161b22',
+                            color: 'white',
+                            border: '1px solid #30363d',
+                            borderRadius: '4px',
+                            fontSize: '13px',
+                          }}
                         />
-                        <button 
+                        <button
                           onClick={() => saveEditedMessage(msg.id, index)}
-                          style={{ padding: '4px 8px', background: '#238636', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                          style={{
+                            padding: '4px 8px',
+                            background: '#238636',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                          }}
                         >
                           OK
                         </button>
-                        <button 
+                        <button
                           onClick={() => setEditingMessageId(null)}
-                          style={{ padding: '4px 8px', background: '#30363d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                          style={{
+                            padding: '4px 8px',
+                            background: '#30363d',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                          }}
                         >
                           X
                         </button>
@@ -324,7 +578,11 @@ function App() {
                     ) : (
                       <span style={{ color: '#c9d1d9', fontSize: '13px' }}>
                         {renderMessageContent(msg.content)}
-                        {msg.edited && <span style={{ color: '#8b949e', fontSize: '10px', marginLeft: '6px' }}>(editado)</span>}
+                        {msg.edited && (
+                          <span style={{ color: '#8b949e', fontSize: '10px', marginLeft: '6px' }}>
+                            (editado)
+                          </span>
+                        )}
                       </span>
                     )}
                   </div>
@@ -332,7 +590,7 @@ function App() {
                   {/* Menú flotante de 3 puntos (⋮) con Editar y Eliminar */}
                   {isMyMessage && !isEditingThis && (
                     <div className="message-actions-container">
-                      <button 
+                      <button
                         onClick={() => setActiveMenuId(isMenuOpen ? null : messageKey)}
                         className="menu-trigger-btn"
                         title="Opciones"
@@ -342,7 +600,7 @@ function App() {
 
                       {isMenuOpen && (
                         <div className="dropdown-menu">
-                          <button 
+                          <button
                             className="dropdown-item"
                             onClick={() => {
                               setEditingMessageId(messageKey);
@@ -352,7 +610,7 @@ function App() {
                           >
                             ✏️ Editar
                           </button>
-                          <button 
+                          <button
                             className="dropdown-item delete"
                             onClick={() => deleteMessage(msg.id, index)}
                           >
@@ -377,8 +635,9 @@ function App() {
           value={messageInput}
           onChange={(e) => setMessageInput(e.target.value)}
           placeholder="Escribe un mensaje o comparte una URL..."
+          disabled={!username}
         />
-        <button type="submit" className="chat-send-btn">
+        <button type="submit" className="chat-send-btn" disabled={!username}>
           Enviar
         </button>
       </form>
