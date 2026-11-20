@@ -58,7 +58,7 @@ const renderMessageContent = (content) => {
   });
 };
 
-// Panel flotante tipo tarjeta inspirado en el Color Picker
+// Panel flotante oscuro con la temática del chat
 function CustomColorPickerCard({ color, onChangeColor, onClose }) {
   const initialRgb = hexToRgb(color);
   const [hexInput, setHexInput] = useState((color || '#5823CD').toUpperCase());
@@ -185,28 +185,28 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
         top: '100%',
         left: '0',
         marginTop: '8px',
-        width: '250px',
-        backgroundColor: '#ffffff',
-        color: '#111827',
-        borderRadius: '18px',
+        width: '252px',
+        backgroundColor: '#0d1117',
+        color: '#e6edf3',
+        borderRadius: '16px',
         padding: '16px',
-        boxShadow: '0 18px 40px rgba(0, 0, 0, 0.45)',
-        border: '1px solid rgba(17, 24, 39, 0.08)',
-        zIndex: 50,
+        boxShadow: '0 20px 44px rgba(0, 0, 0, 0.65)',
+        border: '1px solid #30363d',
+        zIndex: 120,
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <span style={{ fontSize: '18px', fontWeight: 500, letterSpacing: '-0.02em' }}>
-          Color Picker
+        <span style={{ fontSize: '16px', fontWeight: 600, letterSpacing: '-0.01em', color: '#e6edf3' }}>
+          Elige un color
         </span>
         <button
           type="button"
           onClick={onClose}
           style={{
-            background: '#f3f4f6',
-            color: '#374151',
-            border: 'none',
-            borderRadius: '999px',
+            background: '#161b22',
+            color: '#8b949e',
+            border: '1px solid #30363d',
+            borderRadius: '8px',
             width: '24px',
             height: '24px',
             cursor: 'pointer',
@@ -242,7 +242,7 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
               width: '126px',
               height: '126px',
               borderRadius: '50%',
-              backgroundColor: '#ffffff',
+              backgroundColor: '#0d1117',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -260,7 +260,7 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
                 width: '112px',
                 height: '112px',
                 borderRadius: '50%',
-                background: `radial-gradient(circle at 80% 25%, ${pureHueHex}, #3b3b45 65%, #18181b 100%)`,
+                background: `radial-gradient(circle at 80% 25%, ${pureHueHex}, #262c36 65%, #080d17 100%)`,
                 pointerEvents: 'auto',
                 cursor: 'crosshair',
               }}
@@ -274,8 +274,8 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
                   width: '14px',
                   height: '14px',
                   borderRadius: '50%',
-                  border: '2px solid #ffffff',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
+                  border: '2px solid #e6edf3',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.6)',
                   pointerEvents: 'none',
                 }}
               />
@@ -292,8 +292,8 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
               height: '28px',
               borderRadius: '50%',
               backgroundColor: color,
-              border: '3px solid #ffffff',
-              boxShadow: '0 4px 10px rgba(0,0,0,0.28)',
+              border: '3px solid #e6edf3',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.55)',
               pointerEvents: 'none',
             }}
           />
@@ -308,8 +308,9 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
           style={{
             position: 'relative',
             height: '14px',
-            borderRadius: '4px',
-            background: `linear-gradient(90deg, rgba(209,213,219,0.7), ${color})`,
+            borderRadius: '6px',
+            border: '1px solid #30363d',
+            background: `linear-gradient(90deg, #161b22, ${color})`,
             cursor: 'pointer',
           }}
         >
@@ -323,8 +324,8 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
               height: '12px',
               borderRadius: '50%',
               backgroundColor: color,
-              border: '2px solid #ffffff',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
+              border: '2px solid #e6edf3',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.6)',
             }}
           />
         </div>
@@ -336,7 +337,7 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
           display: 'grid',
           gridTemplateColumns: '1.35fr 1fr 1fr 1fr',
           gap: '6px',
-          borderTop: '1px solid #e5e7eb',
+          borderTop: '1px solid #30363d',
           paddingTop: '10px',
           textAlign: 'center',
         }}
@@ -350,17 +351,18 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
             style={{
               width: '100%',
               boxSizing: 'border-box',
-              background: '#e5e7eb',
-              color: '#111827',
-              border: 'none',
+              background: '#161b22',
+              color: '#e6edf3',
+              border: '1px solid #30363d',
               borderRadius: '6px',
               padding: '5px 4px',
               fontSize: '11px',
               fontWeight: 600,
               textAlign: 'center',
+              outline: 'none',
             }}
           />
-          <div style={{ fontSize: '11px', color: '#374151', marginTop: '4px', fontWeight: 600 }}>#</div>
+          <div style={{ fontSize: '11px', color: '#8b949e', marginTop: '4px', fontWeight: 600 }}>#</div>
         </div>
 
         {['r', 'g', 'b'].map((ch) => (
@@ -374,16 +376,17 @@ function CustomColorPickerCard({ color, onChangeColor, onClose }) {
               style={{
                 width: '100%',
                 boxSizing: 'border-box',
-                background: '#f3f4f6',
-                color: '#111827',
-                border: 'none',
+                background: '#080d17',
+                color: '#e6edf3',
+                border: '1px solid #30363d',
                 borderRadius: '6px',
                 padding: '5px 2px',
                 fontSize: '11px',
                 textAlign: 'center',
+                outline: 'none',
               }}
             />
-            <div style={{ fontSize: '11px', color: '#4b5563', marginTop: '4px' }}>
+            <div style={{ fontSize: '11px', color: '#8b949e', marginTop: '4px' }}>
               {ch.toUpperCase()}
             </div>
           </div>
