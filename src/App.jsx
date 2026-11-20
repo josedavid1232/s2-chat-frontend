@@ -507,22 +507,36 @@ function WhatsAppSmileIcon({ size = 16 }) {
   );
 }
 
-// Aplica o alternar reacción { "👍": ["user1", ...] } en memoria
+// Permite solo 1 reacción por usuario en cada mensaje:
+// - Si ya tenía ese mismo emoji: lo quita.
+// - Si tenía otro emoji: lo reemplaza por el nuevo.
+// - Si no tenía reacción: lo agrega.
 const applyReactionUpdate = (msg, emoji, reactorName) => {
   if (!emoji || !reactorName) return msg;
   const cleanReactor = reactorName.trim();
+  const reactorKey = cleanReactor.toLowerCase();
   const currentMap = { ...(msg.reactions || {}) };
-  const users = Array.isArray(currentMap[emoji]) ? [...currentMap[emoji]] : [];
 
-  const exists = users.some((u) => u.toLowerCase() === cleanReactor.toLowerCase());
-  const nextUsers = exists
-    ? users.filter((u) => u.toLowerCase() !== cleanReactor.toLowerCase())
-    : [...users, cleanReactor];
+  let previousEmoji = null;
 
-  if (nextUsers.length === 0) {
-    delete currentMap[emoji];
-  } else {
-    currentMap[emoji] = nextUsers;
+  for (const [existingEmoji, users] of Object.entries(currentMap)) {
+    if (!Array.isArray(users)) continue;
+    const hadThisEmoji = users.some((u) => String(u).trim().toLowerCase() === reactorKey);
+    if (hadThisEmoji) {
+      previousEmoji = existingEmoji;
+    }
+    const filtered = users.filter((u) => String(u).trim().toLowerCase() !== reactorKey);
+    if (filtered.length === 0) {
+      delete currentMap[existingEmoji];
+    } else {
+      currentMap[existingEmoji] = filtered;
+    }
+  }
+
+  if (previousEmoji !== emoji) {
+    const targetList = Array.isArray(currentMap[emoji]) ? [...currentMap[emoji]] : [];
+    targetList.push(cleanReactor);
+    currentMap[emoji] = targetList;
   }
 
   return { ...msg, reactions: currentMap };
@@ -1492,7 +1506,7 @@ function App() {
                       {Object.entries(reactionsObj).map(([emoji, reactors]) => {
                         if (!Array.isArray(reactors) || reactors.length === 0) return null;
                         const hasReacted = username
-                          ? reactors.some((u) => u.toLowerCase() === username.trim().toLowerCase())
+                          ? reactors.some((u) => String(u).trim().toLowerCase() === username.trim().toLowerCase())
                           : false;
 
                         return (
